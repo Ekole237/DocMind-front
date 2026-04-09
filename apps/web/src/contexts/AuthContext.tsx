@@ -1,75 +1,73 @@
 import type { ReactNode } from "react"
 import { createContext, useCallback, useEffect, useState } from "react"
-import apiClient from "../api/client"
-import type { LoginRequest, LoginResponse, User } from "../types"
-import { getToken, getUser, removeToken, setToken, setUser } from "../utils/storage"
+import { useNavigate } from "react-router-dom"
+import { API_BASE_URL, login as apiLogin } from "../api/client"
+import type { ApiError, JwtUser } from "../types"
+import { getUser, isAuthenticated, removeToken, saveToken } from "../utils/storage"
 
 interface AuthContextType {
-  user: User | null
-  token: string | null
+  user: JwtUser | null
   isLoading: boolean
-  login: (email: string, password: string) => Promise<void>
+  loginWithPassword: (email: string, password: string) => Promise<void>
+  loginWithZoho: () => void
   logout: () => void
-  isAuthenticated: boolean
+  handleOAuthCallback: (token: string) => void
 }
 
 export const AuthContext = createContext<AuthContextType | undefined>(undefined)
 
-interface AuthProviderProps {
-  children: ReactNode
-}
-
-export function AuthProvider({ children }: AuthProviderProps) {
-  const [user, setUserState] = useState<User | null>(null)
-  const [token, setTokenState] = useState<string | null>(null)
+export function AuthProvider({ children }: { children: ReactNode }) {
+  const [user, setUser] = useState<JwtUser | null>(null)
   const [isLoading, setIsLoading] = useState(true)
+  const navigate = useNavigate()
 
-  // Restore auth state from localStorage on mount
+  // Restore auth state on mount
   useEffect(() => {
-    const savedToken = getToken()
-    const savedUser = getUser()
-
-    if (savedToken && savedUser) {
-      setTokenState(savedToken)
-      setUserState(savedUser)
+    if (isAuthenticated()) {
+      setUser(getUser())
+    } else {
+      removeToken()
     }
-
     setIsLoading(false)
   }, [])
 
-  const login = useCallback(async (email: string, password: string) => {
-    setIsLoading(true)
-    try {
-      const response = await apiClient.post<LoginResponse>("/auth/login", {
-        email,
-        password,
-      } as LoginRequest)
-
-      const { token: newToken, user: newUser } = response.data
-
-      setToken(newToken)
-      setUser(newUser)
-      setTokenState(newToken)
-      setUserState(newUser)
-    } finally {
-      setIsLoading(false)
+  const loginWithPassword = useCallback(async (email: string, password: string) => {
+    const token = await apiLogin(email, password)
+    saveToken(token)
+    const decoded = getUser()
+    if (!decoded) {
+      removeToken()
+      throw { statusCode: 500, message: "Token invalide reçu du serveur", code: "INVALID_TOKEN" } satisfies ApiError
     }
+    setUser(decoded)
+    navigate("/chat", { replace: true })
+  }, [navigate])
+
+  const loginWithZoho = useCallback(() => {
+    window.location.href = `${API_BASE_URL}/auth/zoho`
   }, [])
+
+  const handleOAuthCallback = useCallback((token: string) => {
+    saveToken(token)
+    const decoded = getUser()
+    if (!decoded) {
+      removeToken()
+      navigate("/login?error=server", { replace: true })
+      return
+    }
+    setUser(decoded)
+    navigate("/chat", { replace: true })
+  }, [navigate])
 
   const logout = useCallback(() => {
     removeToken()
-    setTokenState(null)
-    setUserState(null)
-  }, [])
+    setUser(null)
+    navigate("/login", { replace: true })
+  }, [navigate])
 
-  const value: AuthContextType = {
-    user,
-    token,
-    isLoading,
-    login,
-    logout,
-    isAuthenticated: !!user && !!token,
-  }
-
-  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
+  return (
+    <AuthContext.Provider value={{ user, isLoading, loginWithPassword, loginWithZoho, handleOAuthCallback, logout }}>
+      {children}
+    </AuthContext.Provider>
+  )
 }

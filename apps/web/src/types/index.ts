@@ -1,8 +1,12 @@
 // ============= AUTH TYPES =============
-export interface User {
-  id: string
+
+// Payload décodé du JWT backend
+export interface JwtUser {
+  sub: string
   email: string
-  role: "ADMIN" | "USER" | "GUEST"
+  role: "employee" | "admin" | "guest"
+  role_level: number
+  is_guest?: boolean
 }
 
 export interface LoginRequest {
@@ -10,10 +14,8 @@ export interface LoginRequest {
   password: string
 }
 
-export interface LoginResponse {
-  token: string
-  user: User
-}
+// Le backend retourne un JWT brut (string), pas d'enveloppe JSON
+export type AuthResponse = string
 
 // ============= CHAT TYPES =============
 export interface Source {
@@ -137,7 +139,7 @@ export interface GuestsResponse {
 
 // ============= ERROR TYPES =============
 export interface ApiError {
-  message: string
   statusCode: number
-  timestamp?: string
+  message: string
+  code?: string
 }

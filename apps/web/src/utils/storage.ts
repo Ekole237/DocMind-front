@@ -1,24 +1,41 @@
+import type { JwtUser } from "../types"
+
 const TOKEN_KEY = "auth_token"
-const USER_KEY = "auth_user"
+
+export function saveToken(token: string): void {
+  localStorage.setItem(TOKEN_KEY, token)
+}
 
 export function getToken(): string | null {
   return localStorage.getItem(TOKEN_KEY)
 }
 
-export function setToken(token: string): void {
-  localStorage.setItem(TOKEN_KEY, token)
-}
-
 export function removeToken(): void {
   localStorage.removeItem(TOKEN_KEY)
-  localStorage.removeItem(USER_KEY)
 }
 
-export function getUser() {
-  const user = localStorage.getItem(USER_KEY)
-  return user ? JSON.parse(user) : null
+export function getUser(): JwtUser | null {
+  const token = getToken()
+  if (!token) return null
+
+  try {
+    const payload = token.split(".")[1]
+    const decoded = JSON.parse(atob(payload)) as JwtUser & { exp: number }
+    return decoded
+  } catch {
+    return null
+  }
 }
 
-export function setUser(user: unknown): void {
-  localStorage.setItem(USER_KEY, JSON.stringify(user))
+export function isAuthenticated(): boolean {
+  const token = getToken()
+  if (!token) return false
+
+  try {
+    const payload = token.split(".")[1]
+    const decoded = JSON.parse(atob(payload)) as { exp: number }
+    return decoded.exp > Date.now() / 1000
+  } catch {
+    return false
+  }
 }

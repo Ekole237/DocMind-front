@@ -18,40 +18,19 @@ export interface LoginRequest {
 export type AuthResponse = string
 
 // ============= CHAT TYPES =============
-export interface Source {
+export interface ChatSource {
   documentName: string
   lastModified: string
   driveUrl: string
   confidenceScore: number
 }
 
-export interface ChatQueryRequest {
-  question: string
-}
-
-export interface ChatQueryResponse {
+export interface ChatResponse {
   answer: string
   isIgnorance: boolean
-  source: Source | null
+  source: ChatSource | null
   queryLogId: string
   responseTimeMs: number
-}
-
-export interface ChatMessage {
-  id: string
-  question: string
-  answer: string
-  sourceDocName: string | null
-  isFlagged: boolean
-  isIgnorance: boolean
-  timestamp: string
-}
-
-export interface ChatHistoryResponse {
-  logs: ChatMessage[]
-  total: number
-  page: number
-  limit: number
 }
 
 export interface FeedbackRequest {
@@ -62,8 +41,38 @@ export interface FeedbackRequest {
 export interface FeedbackResponse {
   id: string
   queryLogId: string
-  status: "PENDING" | "RESOLVED"
+  status: string
   createdAt: string
+}
+
+// Item retourné par GET /chat/history
+export interface QueryLogSummary {
+  id: string
+  question: string
+  answer: string
+  sourceDocName: string | null
+  isFlagged: boolean
+  isIgnorance: boolean
+  timestamp: string
+}
+
+export interface HistoryResponse {
+  logs: QueryLogSummary[]
+  total: number
+  page: number
+  limit: number
+}
+
+// Message UI — état local du ChatPage
+export interface ChatMessage {
+  id: string
+  role: "user" | "assistant"
+  content: string
+  source?: ChatSource | null
+  isIgnorance?: boolean
+  queryLogId?: string
+  hasFeedback?: boolean
+  responseTimeMs?: number
 }
 
 // ============= ADMIN TYPES =============

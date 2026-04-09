@@ -1,7 +1,7 @@
 import { Alert, AlertDescription } from "@workspace/ui/components/alert"
 import { Button } from "@workspace/ui/components/button"
 import { Input } from "@workspace/ui/components/input"
-import { Mail } from "lucide-react"
+import { Mail, Loader2, KeyRound, ChevronRight } from "lucide-react"
 import { useState } from "react"
 import { useAuth } from "../../hooks/useAuth"
 import type { ApiError } from "../../types"
@@ -11,14 +11,14 @@ function isApiError(err: unknown): err is ApiError {
 }
 
 function getErrorMessage(err: unknown, status?: number): string {
-  if (status === 429) return "Trop de tentatives, réessayez dans 15 minutes."
+  if (status === 429) return "Trop de tentatives. Veuillez patienter 15 minutes."
 
   if (isApiError(err)) {
-    if (err.code === "INVALID_CREDENTIALS") return "Identifiants incorrects."
-    return err.message || "Erreur lors de la connexion."
+    if (err.code === "INVALID_CREDENTIALS") return "Identifiants incorrects. Veuillez vérifier votre email et mot de passe."
+    return err.message || "Impossible de se connecter au serveur."
   }
 
-  return "Erreur lors de la connexion."
+  return "Erreur lors de la connexion. Vérifiez votre connexion internet."
 }
 
 export function LoginForm() {
@@ -27,9 +27,9 @@ export function LoginForm() {
   const [error, setError] = useState<string | null>(null)
   const [isPasswordLoading, setIsPasswordLoading] = useState(false)
   const [isZohoLoading, setIsZohoLoading] = useState(false)
+  const [isAdminFormVisible, setIsAdminFormVisible] = useState(false)
 
   const { loginWithPassword, loginWithZoho } = useAuth()
-
   const isLoading = isPasswordLoading || isZohoLoading
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -37,13 +37,13 @@ export function LoginForm() {
     setError(null)
 
     if (!email || !password) {
-      setError("L'email et le mot de passe sont requis.")
+      setError("Veuillez remplir tous les champs.")
       return
     }
 
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
     if (!emailRegex.test(email)) {
-      setError("Adresse email invalide.")
+      setError("L'adresse email saisie est incorrecte.")
       return
     }
 
@@ -61,90 +61,132 @@ export function LoginForm() {
   const handleZoho = () => {
     setError(null)
     setIsZohoLoading(true)
-    // loginWithZoho() fait window.location.href — le loading reste affiché
-    // jusqu'à la navigation
     loginWithZoho()
   }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4">
+    <div className="flex flex-col gap-6">
       {error && (
-        <Alert variant="destructive">
-          <AlertDescription>{error}</AlertDescription>
+        <Alert variant="destructive" className="animate-in fade-in slide-in-from-top-2">
+          <AlertDescription className="text-xs font-medium leading-tight tracking-tight">
+            {error}
+          </AlertDescription>
         </Alert>
       )}
 
-      <div className="space-y-2">
-        <label htmlFor="email" className="text-sm font-medium">
-          Email
-        </label>
-        <Input
-          id="email"
-          type="email"
-          placeholder="votre@email.com"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
+      {/* Primary Auth: Zoho for all Employees */}
+      <div className="space-y-4">
+        <Button
+          type="button"
+          className="relative h-12 w-full gap-3 overflow-hidden rounded-xl font-semibold shadow-md transition-all hover:shadow-lg active:scale-[0.98]"
+          onClick={handleZoho}
           disabled={isLoading}
-          required
-          autoComplete="email"
-        />
+        >
+          {isZohoLoading ? (
+            <Loader2 className="h-5 w-5 animate-spin" />
+          ) : (
+            <>
+              <Mail className="h-5 w-5" />
+              <span>Accès Collaborateur via Zoho</span>
+            </>
+          )}
+        </Button>
+        <p className="text-center text-[11px] text-muted-foreground">
+          Utilisez vos identifiants d'entreprise pour vous connecter.
+        </p>
       </div>
-
-      <div className="space-y-2">
-        <label htmlFor="password" className="text-sm font-medium">
-          Mot de passe
-        </label>
-        <Input
-          id="password"
-          type="password"
-          placeholder="••••••••"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          disabled={isLoading}
-          required
-          autoComplete="current-password"
-        />
-      </div>
-
-      <Button type="submit" className="w-full" disabled={isLoading}>
-        {isPasswordLoading ? (
-          <span className="flex items-center gap-2">
-            <span className="inline-block h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
-            Connexion...
-          </span>
-        ) : (
-          "Se connecter"
-        )}
-      </Button>
 
       <div className="relative">
         <div className="absolute inset-0 flex items-center">
-          <div className="w-full border-t border-border" />
+          <div className="w-full border-t border-border/50" />
         </div>
-        <div className="relative flex justify-center text-sm">
-          <span className="bg-background px-2 text-muted-foreground">ou</span>
+        <div className="relative flex justify-center text-xs uppercase tracking-widest text-muted-foreground/50">
+          <span className="bg-background px-3 font-medium">Administration</span>
         </div>
       </div>
 
-      <Button
-        type="button"
-        variant="outline"
-        className="w-full gap-2"
-        onClick={handleZoho}
-        disabled={isLoading}
-      >
-        {isZohoLoading ? (
-          <span className="flex items-center gap-2">
-            <span className="inline-block h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
-            Redirection...
-          </span>
+      {/* Secondary Auth: Password for Admins */}
+      <div className="space-y-3">
+        {!isAdminFormVisible ? (
+          <Button
+            type="button"
+            variant="ghost"
+            className="h-10 w-full justify-between gap-2 px-3 text-muted-foreground transition-colors hover:text-foreground"
+            onClick={() => setIsAdminFormVisible(true)}
+            disabled={isLoading}
+          >
+            <div className="flex items-center gap-2 text-xs font-medium uppercase tracking-wider">
+              <KeyRound className="h-4 w-4" />
+              Accès Administration
+            </div>
+            <ChevronRight className="h-4 w-4" />
+          </Button>
         ) : (
-          <>
-            <Mail className="h-4 w-4" />
-            Se connecter avec Zoho
-          </>
+          <form onSubmit={handleSubmit} className="animate-in fade-in slide-in-from-top-3 duration-300 space-y-4">
+            <div className="space-y-4">
+              <div className="space-y-1.5 px-0.5">
+                <label htmlFor="email" className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground/80 ml-1">
+                  Email Administrateur
+                </label>
+                <Input
+                  id="email"
+                  type="email"
+                  placeholder="admin@entreprise.com"
+                  value={email}
+                  onChange={(e) => {
+                    setEmail(e.target.value)
+                    if (error) setError(null)
+                  }}
+                  disabled={isLoading}
+                  required
+                  autoComplete="email"
+                  className="h-11 rounded-xl bg-muted/20 border-border/50 focus-visible:ring-primary/20"
+                />
+              </div>
+
+              <div className="space-y-1.5 px-0.5">
+                <label htmlFor="password" className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground/80 ml-1">
+                  Mot de passe
+                </label>
+                <Input
+                  id="password"
+                  type="password"
+                  placeholder="••••••••"
+                  value={password}
+                  onChange={(e) => {
+                    setPassword(e.target.value)
+                    if (error) setError(null)
+                  }}
+                  disabled={isLoading}
+                  required
+                  autoComplete="current-password"
+                  className="h-11 rounded-xl bg-muted/20 border-border/50 focus-visible:ring-primary/20"
+                />
+              </div>
+
+              <Button type="submit" className="h-11 w-full rounded-xl font-medium shadow-sm transition-all active:scale-[0.98]" disabled={isLoading}>
+                {isPasswordLoading ? (
+                  <Loader2 className="h-5 w-5 animate-spin" />
+                ) : (
+                  "Valider l'authentification"
+                )}
+              </Button>
+
+              <button
+                type="button"
+                className="w-full text-center text-xs text-muted-foreground underline-offset-4 hover:underline"
+                onClick={() => {
+                  setIsAdminFormVisible(false)
+                  setError(null)
+                }}
+                disabled={isLoading}
+              >
+                Retour aux accès collaborateur
+              </button>
+            </div>
+          </form>
         )}
-      </Button>
-    </form>
+      </div>
+    </div>
   )
 }

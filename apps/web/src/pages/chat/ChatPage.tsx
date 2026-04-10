@@ -1,6 +1,6 @@
 import { Button } from "@workspace/ui/components/button"
 import { Input } from "@workspace/ui/components/input"
-import { History, LogOut, Menu, X, Send, Bot } from "lucide-react"
+import { History, LogOut, Menu, X, Send, Bot, FileText, Search, Sparkles } from "lucide-react"
 import { useState } from "react"
 import { useNavigate } from "react-router-dom"
 import { FeedbackModal } from "../../components/chat/FeedbackModal"
@@ -10,6 +10,13 @@ import { useAuth } from "../../hooks/useAuth"
 import { useChat } from "./useChat"
 
 // --- PRESENTATIONAL COMPONENTS ---
+
+const SUGGESTED_QUESTIONS = [
+  { text: "Quelle est la politique de télétravail ?", icon: <Bot className="h-4 w-4" /> },
+  { text: "Détails de l'assurance médicale ?", icon: <Sparkles className="h-4 w-4" /> },
+  { text: "Convention collective applicable ?", icon: <FileText className="h-4 w-4" /> },
+  { text: "Procédure de demande de congé ?", icon: <Search className="h-4 w-4" /> },
+]
 
 function ChatSidebar({
   isOpen,
@@ -84,7 +91,7 @@ function ChatHeader({ onMenuClick }: { onMenuClick: () => void }) {
         <Menu className="h-5 w-5 text-muted-foreground" />
       </button>
       <div className="flex flex-1 items-center justify-between">
-        <h2 className="text-sm font-medium">Assistant RH</h2>
+        <h2 className="text-sm font-medium">Assistant Documentaire</h2>
       </div>
     </header>
   )
@@ -109,6 +116,7 @@ export function ChatPage() {
     setFeedbackModal,
     scrollRef,
     handleSubmit,
+    sendMessage,
     handleFeedback,
     MAX_LENGTH,
   } = useChat()
@@ -129,15 +137,32 @@ export function ChatPage() {
         <div className="flex-1 overflow-y-auto scroll-smooth" ref={scrollRef}>
           <div className="mx-auto flex w-full max-w-3xl flex-col gap-6 p-4 pb-32 sm:p-6 sm:pb-36">
             {messages.length === 0 && !isLoading && (
-              <div className="flex h-[50vh] flex-col items-center justify-center space-y-4 text-center opacity-0 animate-in fade-in duration-500">
-                <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-primary/10 text-primary">
+              <div className="flex h-[70vh] flex-col items-center justify-center space-y-8 text-center opacity-0 animate-in fade-in duration-700">
+                <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-primary/10 text-primary ring-1 ring-primary/20 shadow-inner">
                   <Bot className="h-8 w-8" />
                 </div>
+                
                 <div className="max-w-sm space-y-2">
-                  <h3 className="text-xl font-semibold tracking-tight">Comment puis-je vous aider ?</h3>
+                  <h3 className="text-2xl font-bold tracking-tight">Bonjour !</h3>
                   <p className="text-sm text-muted-foreground">
-                    Posez vos questions sur les documents de l'entreprise, je suis là pour vous accompagner.
+                    Je suis votre assistant de recherche documentaire. 
+                    Posez vos questions sur nos politiques internes, assurances et procédures.
                   </p>
+                </div>
+
+                <div className="grid w-full grid-cols-1 gap-3 sm:grid-cols-2">
+                  {SUGGESTED_QUESTIONS.map((q, i) => (
+                    <button
+                      key={i}
+                      onClick={() => sendMessage(q.text)}
+                      className="group flex flex-col items-start gap-2 rounded-xl border border-border bg-card p-4 text-left transition-all hover:border-primary/50 hover:bg-primary/5 hover:shadow-md"
+                    >
+                      <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-muted group-hover:bg-primary/10 group-hover:text-primary transition-colors">
+                        {q.icon}
+                      </div>
+                      <span className="text-xs font-medium text-foreground">{q.text}</span>
+                    </button>
+                  ))}
                 </div>
               </div>
             )}
@@ -231,7 +256,7 @@ export function ChatPage() {
                 {inputError ? (
                   <span className="text-destructive font-medium">{inputError}</span>
                 ) : (
-                  "L'assistant peut faire des erreurs. Vérifiez les informations importantes."
+                  "L'assistant documentaire analyse les ressources internes pour vous répondre."
                 )}
               </span>
               <span className={inputValue.length > MAX_LENGTH * 0.9 ? "text-destructive font-medium" : ""}>

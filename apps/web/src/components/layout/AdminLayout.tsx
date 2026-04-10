@@ -1,5 +1,5 @@
 import { Button } from "@workspace/ui/components/button"
-import { Activity, FileText, LayoutDashboard, LogOut, Menu, MessageSquare, Users } from "lucide-react"
+import { Activity, ArrowLeft, FileText, LayoutDashboard, LogOut, Menu, MessageSquare, Users } from "lucide-react"
 import type { ReactNode } from "react"
 import { useState } from "react"
 import { useNavigate } from "react-router-dom"
@@ -55,11 +55,16 @@ export function AdminLayout({ children, currentPage }: AdminLayoutProps) {
 
           <Button
             variant="ghost"
+            className="w-full justify-start gap-2 text-muted-foreground"
+            onClick={() => navigate("/chat")}
+          >
+            <ArrowLeft className="h-4 w-4" />
+            Retour au chat
+          </Button>
+          <Button
+            variant="ghost"
             className="w-full justify-start gap-2 text-destructive hover:text-destructive"
-            onClick={() => {
-              logout()
-              navigate("/login")
-            }}
+            onClick={logout}
           >
             <LogOut className="h-4 w-4" />
             Déconnexion

@@ -6,9 +6,12 @@ import { useNavigate, useSearchParams } from "react-router-dom"
 import { LoginForm } from "../../components/auth/LoginForm"
 import { useAuth } from "../../hooks/useAuth"
 
-const ZOHO_ERROR_MESSAGES: Record<string, string> = {
-  cancelled: "La connexion Zoho a été annulée.",
-  server: "Le serveur Zoho ne répond pas. Réessayez plus tard.",
+const ERROR_MESSAGES: Record<string, string> = {
+  cancelled: "La connexion a été annulée.",
+  server: "Le serveur ne répond pas. Réessayez plus tard.",
+  session_expired: "Votre session a expiré. Veuillez vous reconnecter.",
+  guest_invalid: "Ce lien d'invitation est invalide, a déjà été utilisé ou a expiré.",
+  logged_out: "Vous avez été déconnecté avec succès.",
 }
 
 export function LoginPage() {
@@ -17,11 +20,11 @@ export function LoginPage() {
   const { user, isLoading } = useAuth()
 
   const errorParam = searchParams.get("error")
-  const errorMessage = errorParam ? (ZOHO_ERROR_MESSAGES[errorParam] ?? "Une erreur inattendue est survenue.") : null
+  const errorMessage = errorParam ? (ERROR_MESSAGES[errorParam] ?? "Une erreur est survenue.") : null
 
   useEffect(() => {
     if (!isLoading && user) {
-      navigate("/chat", { replace: true })
+      navigate(user.role === "admin" ? "/admin/dashboard" : "/chat", { replace: true })
     }
   }, [user, isLoading, navigate])
 
@@ -55,7 +58,7 @@ export function LoginPage() {
           </CardHeader>
           <CardContent className="space-y-6">
             {errorMessage && (
-              <Alert variant="destructive" className="animate-in fade-in slide-in-from-top-2">
+              <Alert variant={errorParam === "logged_out" ? "default" : "destructive"} className="animate-in fade-in slide-in-from-top-2">
                 <AlertDescription className="text-xs font-medium">{errorMessage}</AlertDescription>
               </Alert>
             )}

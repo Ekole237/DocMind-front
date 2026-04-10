@@ -1,31 +1,21 @@
-import { AlertCircle, Users } from "lucide-react"
 import { useEffect, useState } from "react"
-import apiClient from "../../api/client"
+import { admin } from "../../api/client"
 import { MetricCard } from "../../components/admin/MetricCard"
 import { AdminLayout } from "../../components/layout/AdminLayout"
-import type { Dashboard } from "../../types"
+import type { DashboardMetrics } from "../../types"
 
 export function DashboardPage() {
-  const [dashboard, setDashboard] = useState<Dashboard | null>(null)
+  const [metrics, setMetrics] = useState<DashboardMetrics | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState("")
 
   useEffect(() => {
-    loadDashboard()
+    admin
+      .getDashboard()
+      .then(setMetrics)
+      .catch(() => setError("Erreur lors du chargement du tableau de bord"))
+      .finally(() => setIsLoading(false))
   }, [])
-
-  const loadDashboard = async () => {
-    setIsLoading(true)
-    setError("")
-    try {
-      const response = await apiClient.get<Dashboard>("/admin/dashboard")
-      setDashboard(response.data)
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Erreur lors du chargement du tableau de bord")
-    } finally {
-      setIsLoading(false)
-    }
-  }
 
   return (
     <AdminLayout currentPage="dashboard">
@@ -33,37 +23,31 @@ export function DashboardPage() {
         <h1 className="mb-6 text-3xl font-bold">Tableau de bord</h1>
 
         {error && (
-          <div className="mb-4 rounded-lg bg-destructive/10 p-4 text-destructive">
-            {error}
-          </div>
+          <div className="mb-4 rounded-lg bg-destructive/10 p-4 text-destructive">{error}</div>
         )}
 
         {isLoading && (
-          <div className="text-center text-muted-foreground">Chargement...</div>
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4">
+            {[...Array(4)].map((_, i) => (
+              <div key={i} className="h-28 animate-pulse rounded-lg bg-muted" />
+            ))}
+          </div>
         )}
 
-        {!isLoading && dashboard && (
+        {!isLoading && metrics && (
           <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4">
+            <MetricCard label="Documents indexés" value={metrics.documentsIndexed} />
             <MetricCard
-              title="Documents"
-              value={dashboard.totalDocuments}
-              icon="📄"
+              label="En attente d'indexation"
+              value={metrics.documentsPending}
+              variant="warning"
             />
             <MetricCard
-              title="Requêtes aujourd'hui"
-              value={dashboard.queriestoday}
-              icon="💬"
+              label="Signalements en attente"
+              value={metrics.feedbacksPending}
+              variant="danger"
             />
-            <MetricCard
-              title="Retours en attente"
-              value={dashboard.pendingFeedbacks}
-              icon={<AlertCircle className="h-6 w-6 text-destructive" />}
-            />
-            <MetricCard
-              title="Invités actifs"
-              value={dashboard.activeGuests}
-              icon={<Users className="h-6 w-6" />}
-            />
+            <MetricCard label="Requêtes ce mois" value={metrics.queriesThisMonth} />
           </div>
         )}
       </div>

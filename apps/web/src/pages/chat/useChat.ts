@@ -33,9 +33,8 @@ export function useChat() {
     }
   }, [messages, isLoading])
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    const question = inputValue.trim()
+  const sendMessage = async (text: string) => {
+    const question = text.trim()
 
     setInputError(null)
     if (question.length < MIN_LENGTH) {
@@ -97,6 +96,11 @@ export function useChat() {
     }
   }
 
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    await sendMessage(inputValue)
+  }
+
   const handleFeedback = async (comment?: string) => {
     try {
       await apiClient.post("/chat/feedback", {
@@ -125,6 +129,7 @@ export function useChat() {
     setFeedbackModal,
     scrollRef,
     handleSubmit,
+    sendMessage,
     handleFeedback,
     MAX_LENGTH,
   }

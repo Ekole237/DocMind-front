@@ -8,6 +8,7 @@ import { DocumentsPage } from "./pages/admin/DocumentsPage"
 import { FeedbacksPage } from "./pages/admin/FeedbacksPage"
 import { GuestsPage } from "./pages/admin/GuestsPage"
 import { LogsPage } from "./pages/admin/LogsPage"
+import { ActivateGuestPage } from "./pages/auth/ActivateGuestPage"
 import { CallbackPage } from "./pages/auth/CallbackPage"
 import { LoginPage } from "./pages/auth/LoginPage"
 import { ChatPage } from "./pages/chat/ChatPage"
@@ -21,6 +22,8 @@ export function App() {
           {/* Auth */}
           <Route path="/login" element={<LoginPage />} />
           <Route path="/auth/callback" element={<CallbackPage />} />
+          <Route path="/auth/guest/activate" element={<ActivateGuestPage />} />
+          <Route path="/auth/guest/magic-link/activate" element={<ActivateGuestPage />} />
 
           {/* Chat — EMPLOYEE et GUEST */}
           <Route

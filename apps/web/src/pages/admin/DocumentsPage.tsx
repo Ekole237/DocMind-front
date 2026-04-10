@@ -1,217 +1,321 @@
 import { Badge } from "@workspace/ui/components/badge"
 import { Button } from "@workspace/ui/components/button"
 import { Input } from "@workspace/ui/components/input"
-import { Eye, EyeOff, Plus, Trash2, Zap } from "lucide-react"
+import { Plus, RefreshCw, Trash2, Zap, EyeOff, Eye } from "lucide-react"
 import { useEffect, useState } from "react"
-import apiClient from "../../api/client"
+import { admin } from "../../api/client"
 import { AdminLayout } from "../../components/layout/AdminLayout"
-import type { Document, DocumentsResponse } from "../../types"
+import type { AdminDocument, ApiError } from "../../types"
 
-export function DocumentsPage() {
-  const [documents, setDocuments] = useState<Document[]>([])
-  const [isLoading, setIsLoading] = useState(true)
+function statusBadge(status: AdminDocument["status"]) {
+  const map = {
+    PENDING: { variant: "outline", label: "En attente" },
+    INDEXED: { variant: "success", label: "Indexé" },
+    DISABLED: { variant: "pending", label: "Désactivé" },
+    ERROR: { variant: "destructive", label: "Erreur" },
+  } as const
+  const { variant, label } = map[status] ?? { variant: "outline", label: status }
+  return <Badge variant={variant}>{label}</Badge>
+}
+
+function getApiMessage(err: unknown, fallback: string): string {
+  const e = err as { response?: { data?: ApiError } }
+  return e.response?.data?.message ?? fallback
+}
+
+// ---- Add Document Modal ----
+interface AddDocModalProps {
+  onClose: () => void
+  onSuccess: () => void
+}
+
+function AddDocModal({ onClose, onSuccess }: AddDocModalProps) {
+  const [title, setTitle] = useState("")
+  const [driveUrl, setDriveUrl] = useState("")
   const [error, setError] = useState("")
-  const [page, setPage] = useState(1)
-  const [totalPages, setTotalPages] = useState(1)
-  const [search, setSearch] = useState("")
-  const [actionLoading, setActionLoading] = useState<string | null>(null)
+  const [loading, setLoading] = useState(false)
 
-  useEffect(() => {
-    loadDocuments()
-  }, [page, search])
-
-  const loadDocuments = async () => {
-    setIsLoading(true)
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!title.trim()) { setError("Le titre est requis."); return }
+    setLoading(true)
     setError("")
     try {
-      const response = await apiClient.get<DocumentsResponse>("/admin/documents", {
-        params: { page, limit: 10, search: search || undefined },
-      })
-      setDocuments(response.data.documents)
-      setTotalPages(Math.ceil(response.data.total / response.data.limit))
+      await admin.importDocument({ title: title.trim(), confidentiality: "PUBLIC", driveUrl: driveUrl || undefined })
+      onSuccess()
+      onClose()
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Erreur lors du chargement")
+      setError(getApiMessage(err, "Erreur lors de l'ajout"))
     } finally {
-      setIsLoading(false)
+      setLoading(false)
     }
   }
 
-  const handleIndex = async (docId: string) => {
-    setActionLoading(docId)
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+      <div className="w-full max-w-md rounded-lg border border-border bg-card p-6 shadow-lg">
+        <h2 className="mb-4 font-semibold text-lg">Ajouter un document</h2>
+        {error && <div className="mb-3 rounded bg-destructive/10 p-2 text-sm text-destructive">{error}</div>}
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div>
+            <label className="mb-1 block text-sm font-medium">Titre <span className="text-destructive">*</span></label>
+            <Input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Nom du document" required />
+          </div>
+          <div>
+            <label className="mb-1 block text-sm font-medium">URL Google Drive (optionnel)</label>
+            <Input value={driveUrl} onChange={(e) => setDriveUrl(e.target.value)} placeholder="https://drive.google.com/..." />
+          </div>
+          <div className="flex justify-end gap-2">
+            <Button type="button" variant="outline" onClick={onClose} disabled={loading}>Annuler</Button>
+            <Button type="submit" disabled={loading}>{loading ? "Ajout..." : "Ajouter"}</Button>
+          </div>
+        </form>
+      </div>
+    </div>
+  )
+}
+
+// ---- Confirm Modal ----
+interface ConfirmModalProps {
+  title: string
+  description: string
+  onConfirm: () => void
+  onClose: () => void
+  loading?: boolean
+}
+
+function ConfirmModal({ title, description, onConfirm, onClose, loading }: ConfirmModalProps) {
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+      <div className="w-full max-w-sm rounded-lg border border-border bg-card p-6 shadow-lg">
+        <h2 className="mb-2 font-semibold">{title}</h2>
+        <p className="mb-6 text-sm text-muted-foreground">{description}</p>
+        <div className="flex justify-end gap-2">
+          <Button variant="outline" onClick={onClose} disabled={loading}>Annuler</Button>
+          <Button variant="destructive" onClick={onConfirm} disabled={loading}>
+            {loading ? "En cours..." : "Confirmer"}
+          </Button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// ---- Main Page ----
+export function DocumentsPage() {
+  const [documents, setDocuments] = useState<AdminDocument[]>([])
+  const [isLoading, setIsLoading] = useState(true)
+  const [error, setError] = useState("")
+  const [actionLoading, setActionLoading] = useState<string | null>(null)
+  const [showAddModal, setShowAddModal] = useState(false)
+  const [reindexConfirm, setReindexConfirm] = useState(false)
+  const [reindexLoading, setReindexLoading] = useState(false)
+  const [toast, setToast] = useState<string | null>(null)
+
+  const showToast = (msg: string) => {
+    setToast(msg)
+    setTimeout(() => setToast(null), 3000)
+  }
+
+  const load = () => {
+    setIsLoading(true)
+    admin.listDocuments()
+      .then(setDocuments)
+      .catch((err) => setError(getApiMessage(err, "Erreur lors du chargement")))
+      .finally(() => setIsLoading(false))
+  }
+
+  useEffect(() => { load() }, [])
+
+  const handleIndex = async (id: string) => {
+    setActionLoading(id)
     try {
-      await apiClient.post(`/admin/documents/${docId}/index`)
-      loadDocuments()
+      await admin.indexDocument(id)
+      showToast("Indexation lancée — la liste sera mise à jour dans quelques secondes.")
+      setTimeout(load, 3000)
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Erreur lors de l'indexation")
+      setError(getApiMessage(err, "Erreur lors de l'indexation"))
     } finally {
       setActionLoading(null)
     }
   }
 
-  const handleToggle = async (docId: string, isActive: boolean) => {
-    setActionLoading(docId)
+  const handleDisable = async (id: string) => {
+    setActionLoading(id)
     try {
-      if (isActive) {
-        await apiClient.patch(`/admin/documents/${docId}/disable`)
-      } else {
-        await apiClient.patch(`/admin/documents/${docId}/enable`)
-      }
-      loadDocuments()
+      await admin.disableDocument(id)
+      load()
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Erreur lors de la mise à jour")
+      setError(getApiMessage(err, "Erreur lors de la désactivation"))
     } finally {
       setActionLoading(null)
     }
   }
 
-  const handleDelete = async (docId: string) => {
-    if (!confirm("Êtes-vous sûr de vouloir supprimer ce document ?")) return
-
-    setActionLoading(docId)
+  const handleEnable = async (id: string) => {
+    setActionLoading(id)
     try {
-      await apiClient.delete(`/admin/documents/${docId}`)
-      loadDocuments()
+      await admin.enableDocument(id)
+      showToast("Réactivation lancée — la liste sera mise à jour dans quelques secondes.")
+      setTimeout(load, 3000)
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Erreur lors de la suppression")
+      setError(getApiMessage(err, "Erreur lors de la réactivation"))
     } finally {
       setActionLoading(null)
+    }
+  }
+
+  const handleDelete = async (id: string) => {
+    setActionLoading(id)
+    try {
+      await admin.deleteDocument(id)
+      load()
+    } catch (err) {
+      setError(getApiMessage(err, "Erreur lors de la suppression"))
+    } finally {
+      setActionLoading(null)
+    }
+  }
+
+  const handleReindexAll = async () => {
+    setReindexLoading(true)
+    try {
+      await admin.reindexAll()
+      setReindexConfirm(false)
+      showToast("Réindexation globale lancée.")
+      setTimeout(load, 3000)
+    } catch (err) {
+      setError(getApiMessage(err, "Erreur lors de la réindexation"))
+    } finally {
+      setReindexLoading(false)
     }
   }
 
   return (
     <AdminLayout currentPage="documents">
+      {toast && (
+        <div className="fixed bottom-4 right-4 z-50 rounded-lg bg-foreground px-4 py-3 text-sm text-background shadow-lg">
+          {toast}
+        </div>
+      )}
+
+      {showAddModal && (
+        <AddDocModal onClose={() => setShowAddModal(false)} onSuccess={load} />
+      )}
+
+      {reindexConfirm && (
+        <ConfirmModal
+          title="Réindexer tous les documents ?"
+          description="Cette opération peut prendre plusieurs minutes et affecter les performances."
+          onConfirm={handleReindexAll}
+          onClose={() => setReindexConfirm(false)}
+          loading={reindexLoading}
+        />
+      )}
+
       <div className="p-6">
-        <div className="mb-6 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+        <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
           <h1 className="text-3xl font-bold">Documents</h1>
-          <Button className="gap-2">
-            <Plus className="h-4 w-4" />
-            Importer un document
-          </Button>
+          <div className="flex gap-2">
+            <Button variant="outline" className="gap-2" onClick={() => setReindexConfirm(true)}>
+              <RefreshCw className="h-4 w-4" />
+              Réindexer tout
+            </Button>
+            <Button className="gap-2" onClick={() => setShowAddModal(true)}>
+              <Plus className="h-4 w-4" />
+              Ajouter
+            </Button>
+          </div>
         </div>
 
         {error && (
-          <div className="mb-4 rounded-lg bg-destructive/10 p-4 text-destructive">
-            {error}
+          <div className="mb-4 rounded-lg bg-destructive/10 p-4 text-destructive">{error}</div>
+        )}
+
+        {isLoading && (
+          <div className="space-y-2">
+            {[...Array(5)].map((_, i) => (
+              <div key={i} className="h-12 animate-pulse rounded bg-muted" />
+            ))}
           </div>
         )}
 
-        <div className="mb-4">
-          <Input
-            placeholder="Rechercher un document..."
-            value={search}
-            onChange={(e) => {
-              setSearch(e.target.value)
-              setPage(1)
-            }}
-          />
-        </div>
-
-        {isLoading && (
-          <div className="text-center text-muted-foreground">Chargement...</div>
-        )}
-
         {!isLoading && documents.length === 0 && (
-          <div className="text-center text-muted-foreground">Aucun document trouvé</div>
+          <div className="text-center text-muted-foreground">Aucun document</div>
         )}
 
         {!isLoading && documents.length > 0 && (
-          <>
-            <div className="overflow-x-auto rounded-lg border border-border">
-              <table className="w-full text-sm">
-                <thead className="border-b border-border bg-muted">
-                  <tr>
-                    <th className="px-4 py-2 text-left">Nom</th>
-                    <th className="px-4 py-2 text-left">Statut</th>
-                    <th className="px-4 py-2 text-left">Date de création</th>
-                    <th className="px-4 py-2 text-left">Actions</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {documents.map((doc) => (
-                    <tr key={doc.id} className="border-b border-border hover:bg-muted/50">
-                      <td className="px-4 py-2 font-medium">{doc.name}</td>
-                      <td className="px-4 py-2">
-                        <Badge
-                          variant={
-                            doc.status === "INDEXED"
-                              ? "success"
-                              : doc.status === "FAILED"
-                                ? "destructive"
-                                : "pending"
-                          }
-                        >
-                          {doc.status === "INDEXED" && "Indexé"}
-                          {doc.status === "PENDING" && "En attente"}
-                          {doc.status === "FAILED" && "Erreur"}
-                        </Badge>
-                      </td>
-                      <td className="px-4 py-2 text-xs text-muted-foreground">
-                        {new Date(doc.createdAt).toLocaleDateString("fr-FR")}
-                      </td>
-                      <td className="px-4 py-2">
-                        <div className="flex gap-2">
-                          {doc.status !== "INDEXED" && (
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              onClick={() => handleIndex(doc.id)}
-                              disabled={actionLoading === doc.id}
-                              title="Indexer le document"
-                            >
-                              <Zap className="h-4 w-4" />
-                            </Button>
-                          )}
+          <div className="overflow-x-auto rounded-lg border border-border">
+            <table className="w-full text-sm">
+              <thead className="border-b border-border bg-muted">
+                <tr>
+                  <th className="px-4 py-3 text-left">Titre</th>
+                  <th className="px-4 py-3 text-left">Statut</th>
+                  <th className="px-4 py-3 text-left">Confidentialité</th>
+                  <th className="px-4 py-3 text-left">Chunks</th>
+                  <th className="px-4 py-3 text-left">Modifié</th>
+                  <th className="px-4 py-3 text-left">Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {documents.map((doc) => (
+                  <tr key={doc.id} className="border-b border-border hover:bg-muted/50">
+                    <td className="px-4 py-3 font-medium max-w-xs truncate">{doc.title}</td>
+                    <td className="px-4 py-3">{statusBadge(doc.status)}</td>
+                    <td className="px-4 py-3 text-xs text-muted-foreground">{doc.confidentiality}</td>
+                    <td className="px-4 py-3 text-xs text-muted-foreground">{doc.chunkCount}</td>
+                    <td className="px-4 py-3 text-xs text-muted-foreground">
+                      {new Date(doc.lastModified).toLocaleDateString("fr-FR")}
+                    </td>
+                    <td className="px-4 py-3">
+                      <div className="flex gap-1">
+                        {(doc.status === "PENDING" || doc.status === "ERROR") && (
                           <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => handleToggle(doc.id, doc.status === "INDEXED")}
+                            size="sm" variant="outline"
+                            title="Indexer"
                             disabled={actionLoading === doc.id}
-                            title={doc.status === "INDEXED" ? "Désactiver" : "Activer"}
+                            onClick={() => handleIndex(doc.id)}
                           >
-                            {doc.status === "INDEXED" ? (
-                              <EyeOff className="h-4 w-4" />
-                            ) : (
-                              <Eye className="h-4 w-4" />
-                            )}
+                            <Zap className="h-4 w-4" />
                           </Button>
+                        )}
+                        {doc.status === "INDEXED" && (
                           <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => handleDelete(doc.id)}
+                            size="sm" variant="outline"
+                            title="Désactiver"
                             disabled={actionLoading === doc.id}
+                            onClick={() => handleDisable(doc.id)}
+                          >
+                            <EyeOff className="h-4 w-4" />
+                          </Button>
+                        )}
+                        {doc.status === "DISABLED" && (
+                          <Button
+                            size="sm" variant="outline"
+                            title="Réactiver"
+                            disabled={actionLoading === doc.id}
+                            onClick={() => handleEnable(doc.id)}
+                          >
+                            <Eye className="h-4 w-4" />
+                          </Button>
+                        )}
+                        {(doc.status === "INDEXED" || doc.status === "DISABLED") && (
+                          <Button
+                            size="sm" variant="outline"
                             title="Supprimer"
+                            disabled={actionLoading === doc.id}
+                            onClick={() => handleDelete(doc.id)}
                           >
                             <Trash2 className="h-4 w-4 text-destructive" />
                           </Button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-
-            {/* Pagination */}
-            <div className="mt-6 flex items-center justify-between">
-              <Button
-                variant="outline"
-                onClick={() => setPage((p) => Math.max(1, p - 1))}
-                disabled={page === 1}
-              >
-                Précédent
-              </Button>
-              <span className="text-sm text-muted-foreground">
-                Page {page} sur {totalPages}
-              </span>
-              <Button
-                variant="outline"
-                onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-                disabled={page === totalPages}
-              >
-                Suivant
-              </Button>
-            </div>
-          </>
+                        )}
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         )}
       </div>
     </AdminLayout>

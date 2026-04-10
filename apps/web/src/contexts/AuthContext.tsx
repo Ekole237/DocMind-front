@@ -8,7 +8,7 @@ import { getUser, isAuthenticated, removeToken, saveToken } from "../utils/stora
 interface AuthContextType {
   user: JwtUser | null
   isLoading: boolean
-  loginWithPassword: (email: string, password: string) => Promise<void>
+  loginWithPassword: (email: string, password: string, _hp?: string) => Promise<void>
   loginWithZoho: () => void
   logout: () => void
   handleOAuthCallback: (token: string) => void
@@ -29,10 +29,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       removeToken()
     }
     setIsLoading(false)
-  }, [])
 
-  const loginWithPassword = useCallback(async (email: string, password: string) => {
-    const token = await apiLogin(email, password)
+    const handleExpired = () => {
+      removeToken()
+      setUser(null)
+      navigate("/login?error=session_expired", { replace: true })
+    }
+    
+    window.addEventListener('auth:expired', handleExpired)
+    return () => window.removeEventListener('auth:expired', handleExpired)
+  }, [navigate])
+
+  const loginWithPassword = useCallback(async (email: string, password: string, _hp = "") => {
+    const token = await apiLogin(email, password, _hp)
     saveToken(token)
     const decoded = getUser()
     if (!decoded) {
@@ -40,7 +49,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       throw { statusCode: 500, message: "Token invalide reçu du serveur", code: "INVALID_TOKEN" } satisfies ApiError
     }
     setUser(decoded)
-    navigate("/chat", { replace: true })
+    navigate(decoded.role === "admin" ? "/admin/dashboard" : "/chat", { replace: true })
   }, [navigate])
 
   const loginWithZoho = useCallback(() => {
@@ -56,13 +65,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       return
     }
     setUser(decoded)
-    navigate("/chat", { replace: true })
+    navigate(decoded.role === "admin" ? "/admin/dashboard" : "/chat", { replace: true })
   }, [navigate])
 
   const logout = useCallback(() => {
     removeToken()
     setUser(null)
-    navigate("/login", { replace: true })
+    navigate("/login?error=logged_out", { replace: true })
   }, [navigate])
 
   return (

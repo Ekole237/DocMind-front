@@ -89,16 +89,16 @@ export interface DashboardMetrics {
 }
 
 export interface AdminDocument {
-  id: string
-  title: string
-  driveUrl: string | null
-  filePath: string | null
-  mimeType: string | null
-  confidentiality: Confidentiality
-  status: DocumentStatus
-  chunkCount: number
-  lastModified: string
-  createdAt: string
+  _id: string
+  _title: string
+  _driveUrl: string | null
+  _filePath: string | null
+  _mimeType: string | null
+  _confidentiality: Confidentiality
+  _status: DocumentStatus
+  _chunkCount: number
+  _lastModified: string
+  _createdAt: string
 }
 
 export interface AdminFeedback {

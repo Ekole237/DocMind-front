@@ -1,0 +1,120 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma-client"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum Role {
+  EMPLOYEE
+  ADMIN
+}
+
+model User {
+  id        String    @id @default(uuid())
+  email     String    @unique
+  password  String?
+  role      Role      @default(EMPLOYEE)
+  lastLogin DateTime? @map("last_login")
+  createdAt DateTime  @default(now()) @map("created_at")
+
+  @@index([email])
+}
+
+model GuestToken {
+  id        String   @id @default(uuid())
+  firstName String   @map("first_name")
+  lastName  String   @map("last_name")
+  email     String   @unique
+  token     String   @unique
+  used      Boolean  @default(false)
+  expiresAt DateTime @map("expires_at")
+  createdAt DateTime @default(now()) @map("created_at")
+  createdBy String   @map("created_by")
+  isGuest   Boolean  @default(true) @map("is_guest")
+
+  @@index([email])
+  @@index([token])
+}
+
+model MagicLink {
+  id         String   @id @default(uuid())
+  guestEmail String   @map("guest_email")
+  token      String   @unique
+  used       Boolean  @default(false)
+  expiresAt  DateTime @map("expires_at")
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  @@index([token])
+}
+
+model Document {
+  id              String          @id @default(uuid())
+  title           String
+  driveUrl        String?
+  filePath        String?
+  mimeType        String?
+  confidentiality Confidentiality @default(PUBLIC)
+
+  status       DocumentStatus @default(PENDING)
+  chunkCount   Int            @default(0)
+  lastModified DateTime       @default(now())
+  createdAt    DateTime       @default(now())
+  queryLogs    QueryLog[]
+
+  @@index([status])
+  @@index([createdAt])
+}
+
+model QueryLog {
+  id             String    @id @default(uuid())
+  userIdHash     String
+  question       String
+  answer         String
+  sourceDocId    String?
+  sourceDocName  String?
+  sourceDriveUrl String?
+  isGuest        Boolean   @default(false)
+  role           String
+  isFlagged      Boolean   @default(false)
+  isIgnorance    Boolean   @default(false)
+  responseTimeMs Int?
+  timestamp      DateTime  @default(now())
+  sourceDoc      Document? @relation(fields: [sourceDocId], references: [id])
+  feedback       Feedback?
+
+  @@index([userIdHash])
+  @@index([timestamp])
+  @@index([isFlagged])
+}
+
+model Feedback {
+  id         String         @id @default(uuid())
+  queryLogId String         @unique
+  comment    String?
+  status     FeedbackStatus @default(PENDING)
+  createdAt  DateTime       @default(now())
+  resolvedAt DateTime?
+  queryLog   QueryLog       @relation(fields: [queryLogId], references: [id])
+
+  @@index([status])
+}
+
+enum DocumentStatus {
+  PENDING
+  INDEXED
+  DISABLED
+  ERROR
+}
+
+enum FeedbackStatus {
+  PENDING
+  RESOLVED
+}
+
+enum Confidentiality {
+  PUBLIC
+  // PRIVATE
+}

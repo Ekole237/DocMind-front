@@ -118,11 +118,21 @@ export const admin = {
   importDocument: (data: {
     title: string
     confidentiality: string
-    driveUrl?: string
-    filePath?: string
-    mimeType?: string
-  }): Promise<AdminDocument> =>
-    apiClient.post<AdminDocument>("/admin/documents", data).then((r) => r.data),
+    file: File
+  }): Promise<AdminDocument> => {
+    const formData = new FormData()
+    formData.append("title", data.title)
+    formData.append("confidentiality", data.confidentiality)
+    formData.append("file", data.file)
+
+    return apiClient
+      .post<AdminDocument>("/admin/documents", formData, {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
+      })
+      .then((r) => r.data)
+  },
 
   indexDocument: (id: string) =>
     apiClient

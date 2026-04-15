@@ -25,11 +25,11 @@ export function App() {
           <Route path="/auth/guest/activate" element={<ActivateGuestPage />} />
           <Route path="/auth/guest/magic-link/activate" element={<ActivateGuestPage />} />
 
-          {/* Chat — EMPLOYEE et GUEST */}
+          {/* Chat — EMPLOYEE, GUEST et ADMIN */}
           <Route
             path="/chat"
             element={
-              <ProtectedRoute allowedRoles={["employee", "guest"]}>
+              <ProtectedRoute allowedRoles={["employee", "guest", "admin"]}>
                 <ChatPage />
               </ProtectedRoute>
             }
@@ -37,7 +37,7 @@ export function App() {
           <Route
             path="/history"
             element={
-              <ProtectedRoute allowedRoles={["employee", "guest"]}>
+              <ProtectedRoute allowedRoles={["employee", "guest", "admin"]}>
                 <HistoryPage />
               </ProtectedRoute>
             }

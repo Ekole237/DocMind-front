@@ -7,7 +7,7 @@ import { admin } from "../../api/client"
 import { AdminLayout } from "../../components/layout/AdminLayout"
 import type { AdminDocument, ApiError } from "../../types"
 
-function statusBadge(status: AdminDocument["status"]) {
+function statusBadge(status: AdminDocument["_status"]) {
   const map = {
     PENDING: { variant: "outline", label: "En attente" },
     INDEXED: { variant: "success", label: "Indexé" },
@@ -31,17 +31,31 @@ interface AddDocModalProps {
 
 function AddDocModal({ onClose, onSuccess }: AddDocModalProps) {
   const [title, setTitle] = useState("")
-  const [driveUrl, setDriveUrl] = useState("")
+  const [file, setFile] = useState<File | null>(null)
   const [error, setError] = useState("")
   const [loading, setLoading] = useState(false)
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!title.trim()) { setError("Le titre est requis."); return }
+    if (!file) { setError("Veuillez sélectionner un fichier."); return }
+    
+    if (file.size > 10 * 1024 * 1024) {
+      setError("Le fichier dépasse la limite autorisée (10 Mo).")
+      return
+    }
+
+    const allowedExtensions = ['pdf', 'docx', 'txt']
+    const extMatch = file.name.split('.').pop()?.toLowerCase()
+    if (!extMatch || !allowedExtensions.includes(extMatch)) {
+      setError("Format non supporté. Utilisez PDF, DOCX ou TXT.")
+      return
+    }
+
     setLoading(true)
     setError("")
     try {
-      await admin.importDocument({ title: title.trim(), confidentiality: "PUBLIC", driveUrl: driveUrl || undefined })
+      await admin.importDocument({ title: title.trim(), confidentiality: "PUBLIC", file })
       onSuccess()
       onClose()
     } catch (err) {
@@ -58,14 +72,28 @@ function AddDocModal({ onClose, onSuccess }: AddDocModalProps) {
         {error && <div className="mb-3 rounded bg-destructive/10 p-2 text-sm text-destructive">{error}</div>}
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
+            <label className="mb-1 block text-sm font-medium">Fichier (PDF, DOCX, TXT - max 10 Mo) <span className="text-destructive">*</span></label>
+            <Input 
+              type="file" 
+              accept=".pdf,.docx,.txt"
+              className="cursor-pointer file:text-foreground file:bg-muted file:border-0 file:mr-2 file:px-2 file:py-1 file:rounded"
+              onChange={(e) => {
+                const selected = e.target.files?.[0] || null
+                setFile(selected)
+                if (selected && !title) {
+                  const nameParts = selected.name.split('.')
+                  nameParts.pop()
+                  setTitle(nameParts.join('.'))
+                }
+              }} 
+              required 
+            />
+          </div>
+          <div>
             <label className="mb-1 block text-sm font-medium">Titre <span className="text-destructive">*</span></label>
             <Input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Nom du document" required />
           </div>
-          <div>
-            <label className="mb-1 block text-sm font-medium">URL Google Drive (optionnel)</label>
-            <Input value={driveUrl} onChange={(e) => setDriveUrl(e.target.value)} placeholder="https://drive.google.com/..." />
-          </div>
-          <div className="flex justify-end gap-2">
+          <div className="flex justify-end gap-2 pt-2">
             <Button type="button" variant="outline" onClick={onClose} disabled={loading}>Annuler</Button>
             <Button type="submit" disabled={loading}>{loading ? "Ajout..." : "Ajouter"}</Button>
           </div>
@@ -259,52 +287,52 @@ export function DocumentsPage() {
               </thead>
               <tbody>
                 {documents.map((doc) => (
-                  <tr key={doc.id} className="border-b border-border hover:bg-muted/50">
-                    <td className="px-4 py-3 font-medium max-w-xs truncate">{doc.title}</td>
-                    <td className="px-4 py-3">{statusBadge(doc.status)}</td>
-                    <td className="px-4 py-3 text-xs text-muted-foreground">{doc.confidentiality}</td>
-                    <td className="px-4 py-3 text-xs text-muted-foreground">{doc.chunkCount}</td>
+                  <tr key={doc._id} className="border-b border-border hover:bg-muted/50">
+                    <td className="px-4 py-3 font-medium max-w-xs truncate">{doc._title}</td>
+                    <td className="px-4 py-3">{statusBadge(doc._status)}</td>
+                    <td className="px-4 py-3 text-xs text-muted-foreground">{doc._confidentiality}</td>
+                    <td className="px-4 py-3 text-xs text-muted-foreground">{doc._chunkCount}</td>
                     <td className="px-4 py-3 text-xs text-muted-foreground">
-                      {new Date(doc.lastModified).toLocaleDateString("fr-FR")}
+                      {new Date(doc._lastModified).toLocaleDateString("fr-FR")}
                     </td>
                     <td className="px-4 py-3">
                       <div className="flex gap-1">
-                        {(doc.status === "PENDING" || doc.status === "ERROR") && (
+                        {(doc._status === "PENDING" || doc._status === "ERROR") && (
                           <Button
                             size="sm" variant="outline"
                             title="Indexer"
-                            disabled={actionLoading === doc.id}
-                            onClick={() => handleIndex(doc.id)}
+                            disabled={actionLoading === doc._id}
+                            onClick={() => handleIndex(doc._id)}
                           >
                             <Zap className="h-4 w-4" />
                           </Button>
                         )}
-                        {doc.status === "INDEXED" && (
+                        {doc._status === "INDEXED" && (
                           <Button
                             size="sm" variant="outline"
                             title="Désactiver"
-                            disabled={actionLoading === doc.id}
-                            onClick={() => handleDisable(doc.id)}
+                            disabled={actionLoading === doc._id}
+                            onClick={() => handleDisable(doc._id)}
                           >
                             <EyeOff className="h-4 w-4" />
                           </Button>
                         )}
-                        {doc.status === "DISABLED" && (
+                        {doc._status === "DISABLED" && (
                           <Button
                             size="sm" variant="outline"
                             title="Réactiver"
-                            disabled={actionLoading === doc.id}
-                            onClick={() => handleEnable(doc.id)}
+                            disabled={actionLoading === doc._id}
+                            onClick={() => handleEnable(doc._id)}
                           >
                             <Eye className="h-4 w-4" />
                           </Button>
                         )}
-                        {(doc.status === "INDEXED" || doc.status === "DISABLED") && (
+                        {(doc._status === "INDEXED" || doc._status === "DISABLED") && (
                           <Button
                             size="sm" variant="outline"
                             title="Supprimer"
-                            disabled={actionLoading === doc.id}
-                            onClick={() => handleDelete(doc.id)}
+                            disabled={actionLoading === doc._id}
+                            onClick={() => handleDelete(doc._id)}
                           >
                             <Trash2 className="h-4 w-4 text-destructive" />
                           </Button>

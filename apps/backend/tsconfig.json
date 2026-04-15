@@ -1,0 +1,40 @@
+{
+  "compilerOptions": {
+    "module": "commonjs",
+    "moduleResolution": "node",
+    "esModuleInterop": true,
+    "isolatedModules": true,
+    "declaration": true,
+    "removeComments": true,
+    "emitDecoratorMetadata": true,
+    "experimentalDecorators": true,
+    "allowSyntheticDefaultImports": true,
+    "target": "ES2023",
+    "sourceMap": true,
+    "outDir": "./dist",
+    "baseUrl": "./",
+    "paths": {
+      "#auth/domain/*": ["src/modules/auth/domain/*"],
+      "#auth/application/*": ["src/modules/auth/application/*"],
+      "#auth/infrastructure/*": ["src/modules/auth/infrastructure/*"],
+      "#auth/presentation/*": ["src/modules/auth/presentation/*"],
+      "#shared/*": ["src/core/*"],
+      "#prisma/*": ["src/generated/prisma-client/*"],
+      "#admin/domain/*": ["src/modules/admin/domain/*"],
+      "#admin/application/*": ["src/modules/admin/application/*"],
+      "#admin/infrastructure/*": ["src/modules/admin/infrastructure/*"],
+      "#admin/presentation/*": ["src/modules/admin/presentation/*"],
+      "#chat/domain/*": ["src/modules/chat/domain/*"],
+      "#chat/application/*": ["src/modules/chat/application/*"],
+      "#chat/infrastructure/*": ["src/modules/chat/infrastructure/*"],
+      "#chat/presentation/*": ["src/modules/chat/presentation/*"]
+    },
+    "incremental": true,
+    "skipLibCheck": true,
+    "strictNullChecks": true,
+    "forceConsistentCasingInFileNames": true,
+    "noImplicitAny": false,
+    "strictBindCallApply": false,
+    "noFallthroughCasesInSwitch": false
+  }
+}

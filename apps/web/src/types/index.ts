@@ -18,40 +18,19 @@ export interface LoginRequest {
 export type AuthResponse = string
 
 // ============= CHAT TYPES =============
-export interface Source {
+export interface ChatSource {
   documentName: string
   lastModified: string
   driveUrl: string
   confidenceScore: number
 }
 
-export interface ChatQueryRequest {
-  question: string
-}
-
-export interface ChatQueryResponse {
+export interface ChatResponse {
   answer: string
   isIgnorance: boolean
-  source: Source | null
+  source: ChatSource | null
   queryLogId: string
   responseTimeMs: number
-}
-
-export interface ChatMessage {
-  id: string
-  question: string
-  answer: string
-  sourceDocName: string | null
-  isFlagged: boolean
-  isIgnorance: boolean
-  timestamp: string
-}
-
-export interface ChatHistoryResponse {
-  logs: ChatMessage[]
-  total: number
-  page: number
-  limit: number
 }
 
 export interface FeedbackRequest {
@@ -62,79 +41,114 @@ export interface FeedbackRequest {
 export interface FeedbackResponse {
   id: string
   queryLogId: string
-  status: "PENDING" | "RESOLVED"
+  status: string
   createdAt: string
 }
 
-// ============= ADMIN TYPES =============
-export interface Dashboard {
-  totalDocuments: number
-  queriestoday: number
-  pendingFeedbacks: number
-  activeGuests: number
-}
-
-export interface Document {
+// Item retourné par GET /chat/history
+export interface QueryLogSummary {
   id: string
-  name: string
-  status: "INDEXED" | "PENDING" | "FAILED"
-  createdAt: string
-  updatedAt: string
-}
-
-export interface DocumentsResponse {
-  documents: Document[]
-  total: number
-  page: number
-  limit: number
-}
-
-export interface Feedback {
-  id: string
-  queryLogId: string
   question: string
-  comment: string | null
-  status: "PENDING" | "RESOLVED"
-  createdAt: string
-}
-
-export interface FeedbacksResponse {
-  feedbacks: Feedback[]
-  total: number
-  page: number
-  limit: number
-}
-
-export interface LogEntry {
-  id: string
-  query: string
   answer: string
-  userRole: string
-  isFlagged: boolean
   sourceDocName: string | null
+  isFlagged: boolean
+  isIgnorance: boolean
   timestamp: string
 }
 
-export interface LogsResponse {
-  logs: LogEntry[]
+export interface HistoryResponse {
+  logs: QueryLogSummary[]
   total: number
   page: number
   limit: number
 }
 
-export interface Guest {
+// Message UI — état local du ChatPage
+export interface ChatMessage {
   id: string
-  email: string
-  expirationDate: string
-  status: "ACTIVE" | "EXPIRED"
+  role: "user" | "assistant"
+  content: string
+  source?: ChatSource | null
+  isIgnorance?: boolean
+  queryLogId?: string
+  hasFeedback?: boolean
+  responseTimeMs?: number
+}
+
+// ============= ADMIN TYPES =============
+
+export type DocumentStatus = "PENDING" | "INDEXED" | "DISABLED" | "ERROR"
+export type FeedbackStatus = "PENDING" | "RESOLVED"
+export type Confidentiality = "PUBLIC"
+
+export interface DashboardMetrics {
+  documentsIndexed: number
+  documentsPending: number
+  feedbacksPending: number
+  queriesThisMonth: number
+}
+
+export interface AdminDocument {
+  _id: string
+  _title: string
+  _driveUrl: string | null
+  _filePath: string | null
+  _mimeType: string | null
+  _confidentiality: Confidentiality
+  _status: DocumentStatus
+  _chunkCount: number
+  _lastModified: string
+  _createdAt: string
+}
+
+export interface AdminFeedback {
+  id: string
+  queryLogId: string
+  comment: string | null
+  status: FeedbackStatus
   createdAt: string
 }
 
-export interface GuestsResponse {
-  guests: Guest[]
-  total: number
-  page: number
-  limit: number
+export interface AdminQueryLog {
+  id: string
+  question: string
+  answer: string
+  role: string
+  isGuest: boolean
+  isIgnorance: boolean
+  isFlagged: boolean
+  sourceDocId: string | null
+  sourceDocName: string | null
+  sourceDriveUrl: string | null
+  responseTimeMs: number
+  timestamp: string
+}
+
+export interface GuestToken {
+  _id: string
+  _firstName: string
+  _lastName: string
+  _email: string
+  _token: string
+  _used: boolean
+  _createdBy: string
+  _expiresAt: string
+  _createdAt: string
+}
+
+export interface CreateGuestTokenResult {
+  id: string
+  email: string
+  expiresAt: string
+  activateUrl: string
+  createdAt: string
+}
+
+export interface ExtendGuestTokenResult {
+  id: string
+  email: string
+  expiresAt: string
+  activateUrl: string
 }
 
 // ============= ERROR TYPES =============

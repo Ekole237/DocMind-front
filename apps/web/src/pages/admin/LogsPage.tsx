@@ -1,52 +1,57 @@
 import { Badge } from "@workspace/ui/components/badge"
 import { Button } from "@workspace/ui/components/button"
 import { Input } from "@workspace/ui/components/input"
-import { useEffect, useState } from "react"
-import apiClient from "../../api/client"
+import { useState } from "react"
+import { admin } from "../../api/client"
 import { AdminLayout } from "../../components/layout/AdminLayout"
-import type { LogEntry, LogsResponse } from "../../types"
+import type { AdminQueryLog, ApiError } from "../../types"
+
+const LIMIT = 10
+
+function getApiMessage(err: unknown, fallback: string): string {
+  const e = err as { response?: { data?: ApiError } }
+  return e.response?.data?.message ?? fallback
+}
 
 export function LogsPage() {
-  const [logs, setLogs] = useState<LogEntry[]>([])
-  const [isLoading, setIsLoading] = useState(true)
+  const [logs, setLogs] = useState<AdminQueryLog[]>([])
+  const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState("")
   const [page, setPage] = useState(1)
-  const [totalPages, setTotalPages] = useState(1)
-  const [fromDate, setFromDate] = useState("")
-  const [toDate, setToDate] = useState("")
-  const [flaggedOnly, setFlaggedOnly] = useState(false)
+  const [hasSearched, setHasSearched] = useState(false)
 
-  useEffect(() => {
-    loadLogs()
-  }, [page, fromDate, toDate, flaggedOnly])
+  // Filters (staged — applied on button click)
+  const [from, setFrom] = useState("")
+  const [to, setTo] = useState("")
+  const [role, setRole] = useState("")
+  const [flagged, setFlagged] = useState(false)
 
-  const loadLogs = async () => {
+  const fetchLogs = (p: number) => {
     setIsLoading(true)
     setError("")
-    try {
-      const response = await apiClient.get<LogsResponse>("/admin/logs", {
-        params: {
-          page,
-          limit: 10,
-          from: fromDate || undefined,
-          to: toDate || undefined,
-          flagged: flaggedOnly || undefined,
-        },
+    admin
+      .listLogs({
+        from: from || undefined,
+        to: to || undefined,
+        role: role || undefined,
+        flagged: flagged || undefined,
+        page: p,
+        limit: LIMIT,
       })
-      setLogs(response.data.logs)
-      setTotalPages(Math.ceil(response.data.total / response.data.limit))
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Erreur lors du chargement")
-    } finally {
-      setIsLoading(false)
-    }
+      .then((data) => {
+        setLogs(data)
+        setPage(p)
+        setHasSearched(true)
+      })
+      .catch((err) => setError(getApiMessage(err, "Erreur lors du chargement")))
+      .finally(() => setIsLoading(false))
   }
 
-  const handleResetFilters = () => {
-    setFromDate("")
-    setToDate("")
-    setFlaggedOnly(false)
-    setPage(1)
+  const handleApply = () => fetchLogs(1)
+
+  const handleReset = () => {
+    setFrom(""); setTo(""); setRole(""); setFlagged(false)
+    setPage(1); setLogs([]); setHasSearched(false)
   }
 
   return (
@@ -55,119 +60,127 @@ export function LogsPage() {
         <h1 className="mb-6 text-3xl font-bold">Logs d'activité</h1>
 
         {error && (
-          <div className="mb-4 rounded-lg bg-destructive/10 p-4 text-destructive">
-            {error}
-          </div>
+          <div className="mb-4 rounded-lg bg-destructive/10 p-4 text-destructive">{error}</div>
         )}
 
         {/* Filters */}
         <div className="mb-6 rounded-lg border border-border bg-card p-4">
-          <h2 className="mb-4 font-semibold">Filtres</h2>
-          <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-4">
             <div>
-              <label className="text-sm font-medium">Depuis</label>
-              <Input
-                type="date"
-                value={fromDate}
-                onChange={(e) => {
-                  setFromDate(e.target.value)
-                  setPage(1)
-                }}
-              />
+              <label className="mb-1 block text-sm font-medium">Depuis</label>
+              <Input type="date" value={from} onChange={(e) => setFrom(e.target.value)} />
             </div>
             <div>
-              <label className="text-sm font-medium">Jusqu'à</label>
-              <Input
-                type="date"
-                value={toDate}
-                onChange={(e) => {
-                  setToDate(e.target.value)
-                  setPage(1)
-                }}
-              />
+              <label className="mb-1 block text-sm font-medium">Jusqu'à</label>
+              <Input type="date" value={to} onChange={(e) => setTo(e.target.value)} />
             </div>
-            <div className="flex flex-col gap-2">
-              <label className="text-sm font-medium">Options</label>
-              <div className="flex items-center gap-2">
+            <div>
+              <label className="mb-1 block text-sm font-medium">Rôle</label>
+              <select
+                value={role}
+                onChange={(e) => setRole(e.target.value)}
+                className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm"
+              >
+                <option value="">Tous</option>
+                <option value="employee">Employé</option>
+                <option value="admin">Admin</option>
+                <option value="guest">Invité</option>
+              </select>
+            </div>
+            <div className="flex flex-col justify-end gap-2">
+              <label className="flex items-center gap-2 text-sm">
                 <input
                   type="checkbox"
-                  id="flagged"
-                  checked={flaggedOnly}
-                  onChange={(e) => {
-                    setFlaggedOnly(e.target.checked)
-                    setPage(1)
-                  }}
-                  className="h-4 w-4 rounded border-gray-300"
+                  checked={flagged}
+                  onChange={(e) => setFlagged(e.target.checked)}
+                  className="h-4 w-4"
                 />
-                <label htmlFor="flagged" className="text-sm">
-                  Seulement flaggés
-                </label>
-                {(fromDate || toDate || flaggedOnly) && (
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={handleResetFilters}
-                    className="ml-auto"
-                  >
-                    Réinitialiser
-                  </Button>
-                )}
+                Signalés uniquement
+              </label>
+              <div className="flex gap-2">
+                <Button onClick={handleApply} disabled={isLoading} className="flex-1">
+                  Appliquer
+                </Button>
+                <Button variant="outline" onClick={handleReset} disabled={isLoading}>
+                  Reset
+                </Button>
               </div>
             </div>
           </div>
         </div>
 
         {isLoading && (
-          <div className="text-center text-muted-foreground">Chargement...</div>
+          <div className="space-y-2">
+            {[...Array(5)].map((_, i) => (
+              <div key={i} className="h-16 animate-pulse rounded bg-muted" />
+            ))}
+          </div>
         )}
 
-        {!isLoading && logs.length === 0 && (
+        {!isLoading && hasSearched && logs.length === 0 && (
           <div className="text-center text-muted-foreground">Aucun log trouvé</div>
+        )}
+
+        {!isLoading && !hasSearched && (
+          <div className="text-center text-muted-foreground">
+            Appliquez des filtres pour afficher les logs.
+          </div>
         )}
 
         {!isLoading && logs.length > 0 && (
           <>
-            <div className="space-y-4">
-              {logs.map((log) => (
-                <div key={log.id} className="rounded-lg border border-border bg-card p-4">
-                  <div className="mb-2 flex flex-col justify-between gap-2 sm:flex-row sm:items-start">
-                    <div className="flex-1 min-w-0">
-                      <p className="font-medium break-words">Q: {log.query}</p>
-                      <p className="mt-1 text-sm text-muted-foreground break-words">
-                        R: {log.answer.substring(0, 100)}...
-                      </p>
-                    </div>
-                    {log.isFlagged && (
-                      <Badge variant="destructive" className="ml-2 flex-shrink-0">
-                        Flaggé
-                      </Badge>
-                    )}
-                  </div>
-                  <div className="mt-3 flex flex-wrap gap-3 text-xs text-muted-foreground">
-                    <span>Rôle: {log.userRole}</span>
-                    {log.sourceDocName && <span>Doc: {log.sourceDocName}</span>}
-                    <span>{new Date(log.timestamp).toLocaleDateString("fr-FR")}</span>
-                  </div>
-                </div>
-              ))}
+            <div className="overflow-x-auto rounded-lg border border-border">
+              <table className="w-full text-sm">
+                <thead className="border-b border-border bg-muted">
+                  <tr>
+                    <th className="px-4 py-3 text-left">Date</th>
+                    <th className="px-4 py-3 text-left">Question</th>
+                    <th className="px-4 py-3 text-left">Réponse</th>
+                    <th className="px-4 py-3 text-left">Rôle</th>
+                    <th className="px-4 py-3 text-left">Temps</th>
+                    <th className="px-4 py-3 text-left">Flags</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {logs.map((log) => (
+                    <tr key={log.id} className="border-b border-border hover:bg-muted/50">
+                      <td className="px-4 py-3 text-xs text-muted-foreground whitespace-nowrap">
+                        {new Date(log.timestamp).toLocaleDateString("fr-FR")}
+                      </td>
+                      <td className="px-4 py-3 max-w-[200px]">
+                        <span className="line-clamp-2 text-xs">{log.question}</span>
+                      </td>
+                      <td className="px-4 py-3 max-w-[200px]">
+                        <span className="line-clamp-2 text-xs text-muted-foreground">{log.answer}</span>
+                      </td>
+                      <td className="px-4 py-3 text-xs">{log.role}</td>
+                      <td className="px-4 py-3 text-xs text-muted-foreground">{log.responseTimeMs}ms</td>
+                      <td className="px-4 py-3">
+                        <div className="flex gap-1">
+                          {log.isFlagged && <Badge variant="pending">Signalé</Badge>}
+                          {log.isIgnorance && <Badge variant="destructive">Sans rép.</Badge>}
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             </div>
 
-            {/* Pagination */}
-            <div className="mt-6 flex items-center justify-between">
+            {/* Blind pagination */}
+            <div className="mt-4 flex items-center justify-between">
               <Button
                 variant="outline"
-                onClick={() => setPage((p) => Math.max(1, p - 1))}
+                onClick={() => fetchLogs(page - 1)}
                 disabled={page === 1}
               >
                 Précédent
               </Button>
-              <span className="text-sm text-muted-foreground">
-                Page {page} sur {totalPages}
-              </span>
+              <span className="text-sm text-muted-foreground">Page {page}</span>
               <Button
                 variant="outline"
-                onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-                disabled={page === totalPages}
+                onClick={() => fetchLogs(page + 1)}
+                disabled={logs.length < LIMIT}
               >
                 Suivant
               </Button>

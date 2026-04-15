@@ -4,13 +4,13 @@ import { useEffect, useState } from "react"
 import { useNavigate } from "react-router-dom"
 import apiClient from "../../api/client"
 import { useAuth } from "../../hooks/useAuth"
-import type { ChatHistoryResponse, ChatMessage } from "../../types"
+import type { QueryLogSummary } from "../../types"
 
 export function HistoryPage() {
   const navigate = useNavigate()
   const { logout } = useAuth()
 
-  const [messages, setMessages] = useState<ChatMessage[]>([])
+  const [messages, setMessages] = useState<QueryLogSummary[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState("")
   const [page, setPage] = useState(1)
@@ -24,7 +24,7 @@ export function HistoryPage() {
     setIsLoading(true)
     setError("")
     try {
-      const response = await apiClient.get<ChatHistoryResponse>("/chat/history", {
+      const response = await apiClient.get<{ logs: QueryLogSummary[]; total: number; page: number; limit: number }>("/chat/history", {
         params: { page, limit: 10 },
       })
 

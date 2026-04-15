@@ -5,11 +5,16 @@
   "scripts": {
     "build": "turbo build",
     "dev": "turbo dev",
+    "dev:back": "npm run start:dev --workspace=services/api",
+    "dev:front": "npm run dev --workspace=apps/web",
+    "services": "docker compose -f infra/docker/docker-compose.dev.yml up -d --force-recreate",
+    "services:down": "docker compose -f infra/docker/docker-compose.dev.yml down",
     "lint": "turbo lint",
     "format": "turbo format",
     "typecheck": "turbo typecheck"
   },
   "devDependencies": {
+    "concurrently": "^9.2.1",
     "prettier": "^3.8.1",
     "prettier-plugin-tailwindcss": "^0.7.2",
     "turbo": "^2.8.17",
@@ -21,6 +26,7 @@
   },
   "workspaces": [
     "apps/*",
+    "services/*",
     "packages/*"
   ]
 }

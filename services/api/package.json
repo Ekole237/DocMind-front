@@ -1,0 +1,178 @@
+{
+  "name": "rh-assistant-api",
+  "version": "0.0.1",
+  "description": "",
+  "author": "",
+  "private": true,
+  "license": "UNLICENSED",
+  "imports": {
+    "#auth/domain/*": {
+      "types": "./src/modules/auth/domain/*",
+      "default": "./dist/src/modules/auth/domain/*.js"
+    },
+    "#auth/application/*": {
+      "types": "./src/modules/auth/application/*",
+      "default": "./dist/src/modules/auth/application/*.js"
+    },
+    "#auth/infrastructure/*": {
+      "types": "./src/modules/auth/infrastructure/*",
+      "default": "./dist/src/modules/auth/infrastructure/*.js"
+    },
+    "#auth/presentation/*": {
+      "types": "./src/modules/auth/presentation/*",
+      "default": "./dist/src/modules/auth/presentation/*.js"
+    },
+    "#shared/*": {
+      "types": "./src/shared/*",
+      "default": "./dist/src/shared/*.js"
+    },
+    "#prisma/*": {
+      "types": "./src/generated/prisma-client/*",
+      "default": "./dist/src/generated/prisma-client/*.js"
+    },
+    "#admin/domain/*": {
+      "types": "./src/modules/admin/domain/*",
+      "default": "./dist/src/modules/admin/domain/*.js"
+    },
+    "#admin/application/*": {
+      "types": "./src/modules/admin/application/*",
+      "default": "./dist/src/modules/admin/application/*.js"
+    },
+    "#admin/infrastructure/*": {
+      "types": "./src/modules/admin/infrastructure/*",
+      "default": "./dist/src/modules/admin/infrastructure/*.js"
+    },
+    "#admin/presentation/*": {
+      "types": "./src/modules/admin/presentation/*",
+      "default": "./dist/src/modules/admin/presentation/*.js"
+    },
+    "#chat/domain/*": {
+      "types": "./src/modules/chat/domain/*",
+      "default": "./dist/src/modules/chat/domain/*.js"
+    },
+    "#chat/application/*": {
+      "types": "./src/modules/chat/application/*",
+      "default": "./dist/src/modules/chat/application/*.js"
+    },
+    "#chat/infrastructure/*": {
+      "types": "./src/modules/chat/infrastructure/*",
+      "default": "./dist/src/modules/chat/infrastructure/*.js"
+    },
+    "#chat/presentation/*": {
+      "types": "./src/modules/chat/presentation/*",
+      "default": "./dist/src/modules/chat/presentation/*.js"
+    }
+  },
+  "scripts": {
+    "build": "nest build",
+    "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\"",
+    "start": "nest start",
+    "start:dev": "nest start --watch",
+    "start:debug": "nest start --debug --watch",
+    "start:prod": "node dist/main",
+    "lint": "eslint \"{src,apps,libs,test}/**/*.ts\" --fix",
+    "test": "jest",
+    "test:watch": "jest --watch",
+    "test:cov": "jest --coverage",
+    "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand",
+    "test:e2e": "jest --config ./jest-e2e.json --runInBand --forceExit",
+    "test:e2e:watch": "jest --config ./jest-e2e.json --runInBand --watch",
+    "db:test:reset": "dotenv -e .env.test -- npx prisma migrate reset --force",
+    "db:test:migrate": "dotenv -e .env.test -- npx prisma migrate dev"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.80.0",
+    "@fastify/multipart": "^10.0.0",
+    "@nestjs/common": "^11.0.1",
+    "@nestjs/config": "^4.0.3",
+    "@nestjs/core": "^11.0.1",
+    "@nestjs/jwt": "^11.0.2",
+    "@nestjs/passport": "^11.0.5",
+    "@nestjs/platform-express": "^11.0.1",
+    "@nestjs/platform-fastify": "^11.1.17",
+    "@nestjs/throttler": "^6.5.0",
+    "@prisma/adapter-pg": "^7.6.0",
+    "@prisma/client": "^7.6.0",
+    "@qdrant/js-client-rest": "^1.17.0",
+    "bcrypt": "^6.0.0",
+    "class-transformer": "^0.5.1",
+    "class-validator": "^0.15.1",
+    "mammoth": "^1.12.0",
+    "nodemailer": "^8.0.5",
+    "openai": "^6.32.0",
+    "passport": "^0.7.0",
+    "passport-jwt": "^4.0.1",
+    "pdf-parse": "^2.4.5",
+    "pg": "^8.20.0",
+    "qrcode": "^1.5.4",
+    "reflect-metadata": "^0.2.2",
+    "resend": "^6.10.0",
+    "rxjs": "^7.8.1",
+    "tiktoken": "^1.0.22"
+  },
+  "devDependencies": {
+    "@eslint/eslintrc": "^3.2.0",
+    "@eslint/js": "^9.18.0",
+    "@nestjs/cli": "^11.0.0",
+    "@nestjs/schematics": "^11.0.0",
+    "@nestjs/testing": "^11.0.1",
+    "@types/bcrypt": "^5.0.2",
+    "@types/express": "^5.0.0",
+    "@types/jest": "^30.0.0",
+    "@types/node": "^22.10.7",
+    "@types/nodemailer": "^8.0.0",
+    "@types/passport-jwt": "^4.0.1",
+    "@types/pg": "^8.20.0",
+    "@types/qrcode": "^1.5.6",
+    "@types/supertest": "^6.0.2",
+    "dotenv": "^16.5.0",
+    "eslint": "^9.18.0",
+    "eslint-config-prettier": "^10.0.1",
+    "eslint-plugin-prettier": "^5.2.2",
+    "globals": "^16.0.0",
+    "jest": "^30.0.0",
+    "prettier": "^3.4.2",
+    "prisma": "^7.6.0",
+    "source-map-support": "^0.5.21",
+    "supertest": "^7.0.0",
+    "ts-jest": "^29.2.5",
+    "ts-loader": "^9.5.2",
+    "ts-node": "^10.9.2",
+    "tsconfig-paths": "^4.2.0",
+    "typescript": "^5.7.3",
+    "typescript-eslint": "^8.20.0"
+  },
+  "jest": {
+    "moduleFileExtensions": [
+      "js",
+      "json",
+      "ts"
+    ],
+    "rootDir": "src",
+    "testRegex": ".*\\.spec\\.ts$",
+    "transform": {
+      "^.+\\.(t|j)s$": "ts-jest"
+    },
+    "collectCoverageFrom": [
+      "**/*.(t|j)s"
+    ],
+    "coverageDirectory": "../coverage",
+    "testEnvironment": "node",
+    "moduleNameMapper": {
+      "^#auth/domain/(.*)$": "<rootDir>/modules/auth/domain/$1",
+      "^#auth/application/(.*)$": "<rootDir>/modules/auth/application/$1",
+      "^#auth/infrastructure/(.*)$": "<rootDir>/modules/auth/infrastructure/$1",
+      "^#auth/presentation/(.*)$": "<rootDir>/modules/auth/presentation/$1",
+      "^#shared/(.*)$": "<rootDir>/shared/$1",
+      "#admin/domain/(.*)$": "<rootDir>/modules/admin/domain/$1",
+      "#admin/application/(.*)$": "<rootDir>/modules/admin/application/$1",
+      "#admin/infrastructure/(.*)$": "<rootDir>/modules/admin/infrastructure/$1",
+      "#admin/presentation/(.*)$": "<rootDir>/modules/admin/presentation/$1",
+      "#chat/domain/(.*)$": "<rootDir>/modules/chat/domain/$1",
+      "#chat/application/(.*)$": "<rootDir>/modules/chat/application/$1",
+      "#chat/infrastructure/(.*)$": "<rootDir>/modules/chat/infrastructure/$1",
+      "#chat/presentation/(.*)$": "<rootDir>/modules/chat/presentation/$1",
+      "^#prisma/(.*)$": "<rootDir>/generated/prisma-client/$1"
+    }
+  }
+}

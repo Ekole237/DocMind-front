@@ -2,6 +2,10 @@ import { DocumentEntity } from '#admin/domain/entities/document.entity';
 import { IndexingError } from '#admin/domain/exceptions/indexing-error';
 import { InvalidDocument } from '#admin/domain/exceptions/invalid-document';
 import { InvalidFormat } from '#admin/domain/exceptions/invalid-format';
+import {
+  FILE_STORAGE_SERVICE,
+  type FileStorageService,
+} from '#admin/domain/services/file-storage.service';
 import { type VectorStoreService } from '#admin/domain/services/vector-store.service';
 import {
   EMBEDDING_SERVICE,
@@ -10,7 +14,6 @@ import {
 import { Injectable, Logger, Inject } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { randomUUID } from 'crypto';
-import * as fs from 'fs/promises';
 import * as mammoth from 'mammoth';
 import { PDFParse } from 'pdf-parse';
 import { QdrantService } from 'src/qdrant/qdrant.service';
@@ -28,6 +31,8 @@ export class VectorStoreServiceImplementation implements VectorStoreService {
     private readonly _configService: ConfigService,
     @Inject(EMBEDDING_SERVICE)
     private readonly _embeddingService: EmbeddingService,
+    @Inject(FILE_STORAGE_SERVICE)
+    private readonly _fileStorageService: FileStorageService,
   ) {}
 
   async indexDocument(document: DocumentEntity): Promise<number> {
@@ -69,10 +74,10 @@ export class VectorStoreServiceImplementation implements VectorStoreService {
 
   private async _extractText(document: DocumentEntity): Promise<string> {
     if (!document.filePath) {
-      throw new InvalidDocument('No local file path available for this document.');
+      throw new InvalidDocument('No file key available for this document.');
     }
 
-    const buffer = await fs.readFile(document.filePath);
+    const buffer = await this._fileStorageService.read(document.filePath);
     const mimeType = document.mimeType ?? '';
 
     if (mimeType === 'application/pdf') {

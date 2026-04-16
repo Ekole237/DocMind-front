@@ -4,10 +4,14 @@ import {
   type FileStorageService,
   type UploadedFile,
 } from '#admin/domain/services/file-storage.service';
+import {
+  S3Client,
+  PutObjectCommand,
+  GetObjectCommand,
+  DeleteObjectCommand,
+} from '@aws-sdk/client-s3';
 import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import * as fs from 'fs/promises';
-import * as path from 'path';
 import { randomUUID } from 'crypto';
 
 const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
@@ -20,12 +24,22 @@ const ALLOWED_MIME_TYPES: Record<string, string> = {
 
 @Injectable()
 export class FileStorageServiceImplementation implements FileStorageService {
-  private readonly _uploadDir: string;
+  private readonly _client: S3Client;
+  private readonly _bucket: string;
 
   constructor(private readonly _config: ConfigService) {
-    this._uploadDir = path.resolve(
-      this._config.get<string>('UPLOAD_DIR', 'uploads'),
-    );
+    const accountId = this._config.getOrThrow<string>('R2_ACCOUNT_ID');
+
+    this._client = new S3Client({
+      region: 'auto',
+      endpoint: `https://${accountId}.r2.cloudflarestorage.com`,
+      credentials: {
+        accessKeyId: this._config.getOrThrow<string>('R2_ACCESS_KEY_ID'),
+        secretAccessKey: this._config.getOrThrow<string>('R2_SECRET_ACCESS_KEY'),
+      },
+    });
+
+    this._bucket = this._config.getOrThrow<string>('R2_BUCKET_NAME');
   }
 
   async save(file: UploadedFile): Promise<string> {
@@ -40,21 +54,40 @@ export class FileStorageServiceImplementation implements FileStorageService {
       throw new MaxFileSize(MAX_FILE_SIZE);
     }
 
-    await fs.mkdir(this._uploadDir, { recursive: true });
+    const key = `documents/${randomUUID()}.${ext}`;
 
-    const filename = `${randomUUID()}.${ext}`;
-    const filePath = path.join(this._uploadDir, filename);
+    await this._client.send(
+      new PutObjectCommand({
+        Bucket: this._bucket,
+        Key: key,
+        Body: file.buffer,
+        ContentType: file.mimeType,
+      }),
+    );
 
-    await fs.writeFile(filePath, file.buffer);
-
-    return filePath;
+    return key;
   }
 
-  async delete(filePath: string): Promise<void> {
+  async read(key: string): Promise<Buffer> {
+    const response = await this._client.send(
+      new GetObjectCommand({ Bucket: this._bucket, Key: key }),
+    );
+
+    const chunks: Uint8Array[] = [];
+    for await (const chunk of response.Body as AsyncIterable<Uint8Array>) {
+      chunks.push(chunk);
+    }
+
+    return Buffer.concat(chunks);
+  }
+
+  async delete(key: string): Promise<void> {
     try {
-      await fs.unlink(filePath);
+      await this._client.send(
+        new DeleteObjectCommand({ Bucket: this._bucket, Key: key }),
+      );
     } catch {
-      // Fichier déjà supprimé ou inexistant — non critique
+      // Objet déjà supprimé ou inexistant — non critique
     }
   }
 }

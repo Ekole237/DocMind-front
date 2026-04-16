@@ -8,5 +8,6 @@ export interface UploadedFile {
 
 export interface FileStorageService {
   save(file: UploadedFile): Promise<string>;
-  delete(filePath: string): Promise<void>;
+  read(key: string): Promise<Buffer>;
+  delete(key: string): Promise<void>;
 }

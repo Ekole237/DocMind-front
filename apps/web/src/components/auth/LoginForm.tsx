@@ -3,7 +3,7 @@ import { Button } from "@workspace/ui/components/button"
 import { Input } from "@workspace/ui/components/input"
 import { Mail, Loader2, KeyRound, ChevronRight, UserCircle, CheckCircle } from "lucide-react"
 import { useState } from "react"
-import { login, requestMagicLink } from "../../api/client"
+import { requestMagicLink } from "../../api/client"
 import { useAuth } from "../../hooks/useAuth"
 import type { ApiError } from "../../types"
 

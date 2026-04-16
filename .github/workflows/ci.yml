@@ -1,0 +1,67 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  ci:
+    name: Lint · Typecheck · Build
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Generate Prisma client
+        run: npx prisma generate --schema=services/api/prisma/schema.prisma
+        env:
+          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/postgres
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Build
+        run: npm run build
+        env:
+          # Variables minimales pour que NestJS compile sans erreur
+          NODE_ENV: production
+          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/postgres
+          JWT_SECRET: ci-secret-key-minimum-32-characters-long
+          JWT_EXPIRY: 8h
+          QDRANT_URL: http://localhost:6333
+          QDRANT_COLLECTION: rh_documents
+          EMBEDDING_DIMENSIONS: "384"
+          HUGGINGFACE_API_KEY: hf_placeholder
+          LLM_PROVIDER: groq
+          GROQ_API_KEY: gsk_placeholder
+          GROQ_MODEL: llama-3.3-70b-versatile
+          STORAGE_PROVIDER: supabase
+          SUPABASE_URL: https://placeholder.supabase.co
+          SUPABASE_SERVICE_ROLE_KEY: placeholder
+          SUPABASE_STORAGE_BUCKET: documents
+          ALTCHA_HMAC_KEY: ci-altcha-hmac-key-placeholder-32chars
+          MAIL_FROM: noreply@localhost
+          SMTP_HOST: localhost
+          SMTP_PORT: "1025"
+          SMTP_SECURE: "false"
+          APP_PUBLIC_URL: http://localhost:5173
+          FRONTEND_URL: http://localhost:5173

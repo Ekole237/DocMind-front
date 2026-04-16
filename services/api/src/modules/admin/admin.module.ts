@@ -22,6 +22,8 @@ import { VECTOR_STORE_SERVICE } from '#admin/domain/services/vector-store.servic
 import { DocumentRepositoryImplementation } from '#admin/infrastructure/repositories/document.repository.implementation';
 import { FeedbackRepositoryImplementation } from '#admin/infrastructure/repositories/feedback.repository.implementation';
 import { FileStorageServiceImplementation } from '#admin/infrastructure/services/file-storage.service.implementation';
+import { LocalFileStorageServiceImplementation } from '#admin/infrastructure/services/local-file-storage.service.implementation';
+import { SupabaseFileStorageServiceImplementation } from '#admin/infrastructure/services/supabase-file-storage.service.implementation';
 import { QueryLogsRepositoryImplementation } from '#admin/infrastructure/repositories/query-logs.repository.implementation';
 import { VectorStoreServiceImplementation } from '#admin/infrastructure/services/vector-store.service.implementation';
 import { AdminController } from '#admin/presentation/controllers/admin.controller';
@@ -81,7 +83,12 @@ import { AuthModule } from '../auth/auth.module';
     },
     {
       provide: FILE_STORAGE_SERVICE,
-      useClass: FileStorageServiceImplementation,
+      useClass:
+        process.env.STORAGE_PROVIDER === 'local'
+          ? LocalFileStorageServiceImplementation
+          : process.env.STORAGE_PROVIDER === 'supabase'
+            ? SupabaseFileStorageServiceImplementation
+            : FileStorageServiceImplementation,
     },
   ],
 })

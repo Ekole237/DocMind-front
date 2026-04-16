@@ -12,6 +12,7 @@ import {
   type EmbeddingService,
 } from 'src/core/embedding/embedding.service';
 import { Injectable, Logger, Inject } from '@nestjs/common';
+import type { Schemas } from '@qdrant/js-client-rest';
 import { ConfigService } from '@nestjs/config';
 import { randomUUID } from 'crypto';
 import * as mammoth from 'mammoth';
@@ -125,7 +126,7 @@ export class VectorStoreServiceImplementation implements VectorStoreService {
   private async _embedChunks(
     chunks: string[],
     document: DocumentEntity,
-  ): Promise<object[]> {
+  ): Promise<Schemas['PointStruct'][]> {
     const embeddings = await this._embeddingService.embedBatch(chunks);
 
     return embeddings.map((vector, index) => ({

@@ -35,7 +35,7 @@ export class FeedbackRepositoryImplementation implements FeedbackRepository {
     ]);
 
     return {
-      feedbacks: raws.map(({ queryLog: _queryLog, ...raw }) =>
+      feedbacks: raws.map(({ queryLog: _q, ...raw }) =>
         FeedbackMapper.toDomain(raw),
       ),
       total,

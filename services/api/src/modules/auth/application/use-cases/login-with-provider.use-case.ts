@@ -26,10 +26,16 @@ export class LoginWithProviderUseCase {
     private readonly tokenService: TokenService,
   ) {}
 
-  async execute(dto: LoginWithProviderDto, accountsUrl?: string): Promise<string> {
+  async execute(
+    dto: LoginWithProviderDto,
+    accountsUrl?: string,
+  ): Promise<string> {
     let user: User;
 
-    const providerUser = await this.providerService.getProfile(dto.code, accountsUrl);
+    const providerUser = await this.providerService.getProfile(
+      dto.code,
+      accountsUrl,
+    );
 
     const existingUser = await this.userRepository.findByEmail(
       providerUser.email,

@@ -12,7 +12,10 @@ declare module 'pdf-parse' {
 
   class PDFParse {
     constructor(params: LoadParameters);
-    getText(options?: { partial?: number[]; first?: number }): Promise<TextResult>;
+    getText(options?: {
+      partial?: number[];
+      first?: number;
+    }): Promise<TextResult>;
     destroy(): Promise<void>;
   }
 

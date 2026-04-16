@@ -28,19 +28,26 @@ export class VectorSearchServiceImplementation implements VectorSearchService {
     threshold: number,
   ): Promise<DocumentChunk[]> {
     const vector = await this._embeddingService.embed(question);
-    const results = await this._qdrantService.search(vector, roleLevel, limit, threshold);
+    const results = await this._qdrantService.search(
+      vector,
+      roleLevel,
+      limit,
+      threshold,
+    );
 
     return results.map((r) => {
-      const payload = r.payload as Record<string, any>;
+      const payload = r.payload as Record<string, unknown>;
       return {
         id: String(r.id),
-        documentId: payload['document_id'] ?? '',
-        content: payload['content'] ?? '',
-        source: payload['source'] ?? '',
-        title: payload['title'] ?? '',
-        lastModified: new Date(payload['date'] ?? Date.now()),
-        chunkIndex: payload['chunk_index'] ?? 0,
-        driveUrl: payload['source'] ?? null,
+        documentId: (payload['document_id'] as string | undefined) ?? '',
+        content: (payload['content'] as string | undefined) ?? '',
+        source: (payload['source'] as string | undefined) ?? '',
+        title: (payload['title'] as string | undefined) ?? '',
+        lastModified: new Date(
+          (payload['date'] as string | number | undefined) ?? Date.now(),
+        ),
+        chunkIndex: (payload['chunk_index'] as number | undefined) ?? 0,
+        driveUrl: (payload['source'] as string | null | undefined) ?? null,
         confidenceScore: r.score,
       };
     });

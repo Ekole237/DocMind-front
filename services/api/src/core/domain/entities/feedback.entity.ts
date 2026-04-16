@@ -11,7 +11,10 @@ export class FeedbackEntity {
     private readonly _resolvedAt: Date | null,
   ) {}
 
-  static create(queryLogId: string, comment: string | null = null): FeedbackEntity {
+  static create(
+    queryLogId: string,
+    comment: string | null = null,
+  ): FeedbackEntity {
     return new FeedbackEntity(
       randomUUID(),
       queryLogId,
@@ -30,13 +33,32 @@ export class FeedbackEntity {
     createdAt: Date,
     resolvedAt: Date | null,
   ): FeedbackEntity {
-    return new FeedbackEntity(id, queryLogId, comment, status, createdAt, resolvedAt);
+    return new FeedbackEntity(
+      id,
+      queryLogId,
+      comment,
+      status,
+      createdAt,
+      resolvedAt,
+    );
   }
 
-  get id(): string { return this._id; }
-  get queryLogId(): string { return this._queryLogId; }
-  get comment(): string | null { return this._comment; }
-  get status(): FeedbackStatus { return this._status; }
-  get createdAt(): Date { return this._createdAt; }
-  get resolvedAt(): Date | null { return this._resolvedAt; }
+  get id(): string {
+    return this._id;
+  }
+  get queryLogId(): string {
+    return this._queryLogId;
+  }
+  get comment(): string | null {
+    return this._comment;
+  }
+  get status(): FeedbackStatus {
+    return this._status;
+  }
+  get createdAt(): Date {
+    return this._createdAt;
+  }
+  get resolvedAt(): Date | null {
+    return this._resolvedAt;
+  }
 }

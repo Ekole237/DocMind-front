@@ -6,6 +6,7 @@ import {
   Logger,
 } from '@nestjs/common';
 import { AppException } from 'src/core/exceptions/app.exception';
+import type { FastifyReply } from 'fastify';
 
 @Catch()
 export class GlobalExceptionFilter implements ExceptionFilter {
@@ -13,7 +14,7 @@ export class GlobalExceptionFilter implements ExceptionFilter {
 
   catch(exception: unknown, host: ArgumentsHost): void {
     const ctx = host.switchToHttp();
-    const res = ctx.getResponse();
+    const res = ctx.getResponse<FastifyReply>();
 
     if (exception instanceof AppException) {
       void res.status(exception.statusCode).send({

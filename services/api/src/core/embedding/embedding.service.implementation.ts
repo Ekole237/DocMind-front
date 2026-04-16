@@ -31,7 +31,7 @@ export class EmbeddingServiceImplementation implements EmbeddingService {
     const response = await fetch(`${HF_BASE_URL}/${this._model}`, {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${this._apiKey}`,
+        Authorization: `Bearer ${this._apiKey}`,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
@@ -42,7 +42,9 @@ export class EmbeddingServiceImplementation implements EmbeddingService {
 
     if (!response.ok) {
       const body = await response.text();
-      throw new Error(`HuggingFace embedding error ${response.status}: ${body}`);
+      throw new Error(
+        `HuggingFace embedding error ${response.status}: ${body}`,
+      );
     }
 
     return response.json() as Promise<number[][]>;

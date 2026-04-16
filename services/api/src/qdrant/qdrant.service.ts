@@ -1,10 +1,10 @@
-import { Injectable, OnModuleInit, Logger } from '@nestjs/common';
+import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { QdrantClient } from '@qdrant/js-client-rest';
+import { QdrantClient, type Schemas } from '@qdrant/js-client-rest';
 
 @Injectable()
 export class QdrantService implements OnModuleInit {
-  private client: QdrantClient;
+  private client!: QdrantClient;
   private readonly logger = new Logger(QdrantService.name);
 
   constructor(private config: ConfigService) {}
@@ -21,8 +21,14 @@ export class QdrantService implements OnModuleInit {
 
     const { exists } = await this.client.collectionExists(collection);
     if (!exists) {
-      const dimensions = parseInt(this.config.get<string>('EMBEDDING_DIMENSIONS', '384'), 10);
-      const qdrantUrl = this.config.get<string>('QDRANT_URL', 'http://localhost:6333');
+      const dimensions = parseInt(
+        this.config.get<string>('EMBEDDING_DIMENSIONS', '384'),
+        10,
+      );
+      const qdrantUrl = this.config.get<string>(
+        'QDRANT_URL',
+        'http://localhost:6333',
+      );
 
       const response = await fetch(`${qdrantUrl}/collections/${collection}`, {
         method: 'PUT',
@@ -37,7 +43,9 @@ export class QdrantService implements OnModuleInit {
         throw new Error(`Failed to create Qdrant collection: ${body}`);
       }
 
-      this.logger.log(`Collection "${collection}" created (dimensions: ${dimensions})`);
+      this.logger.log(
+        `Collection "${collection}" created (dimensions: ${dimensions})`,
+      );
     }
   }
 
@@ -72,7 +80,7 @@ export class QdrantService implements OnModuleInit {
     }
   }
 
-  async upsert(collectionName: string, points: any[]) {
+  async upsert(collectionName: string, points: Schemas['PointStruct'][]) {
     return this.client.upsert(collectionName, { points });
   }
 

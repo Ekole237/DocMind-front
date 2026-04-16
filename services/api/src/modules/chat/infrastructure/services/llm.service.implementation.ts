@@ -78,7 +78,10 @@ export class LlmServiceImplementation implements LlmService {
     });
 
     const completion = await client.chat.completions.create({
-      model: this._configService.get<string>('GROQ_MODEL', 'llama-3.3-70b-versatile'),
+      model: this._configService.get<string>(
+        'GROQ_MODEL',
+        'llama-3.3-70b-versatile',
+      ),
       messages: [
         { role: 'system', content: systemPrompt },
         { role: 'user', content: userPrompt },

@@ -4,6 +4,10 @@ declare module 'mammoth' {
     messages: unknown[];
   }
 
-  function extractRawText(options: { buffer: Buffer }): Promise<ExtractionResult>;
-  function convertToHtml(options: { buffer: Buffer }): Promise<ExtractionResult>;
+  function extractRawText(options: {
+    buffer: Buffer;
+  }): Promise<ExtractionResult>;
+  function convertToHtml(options: {
+    buffer: Buffer;
+  }): Promise<ExtractionResult>;
 }

@@ -50,7 +50,10 @@ export class VectorStoreServiceImplementation implements VectorStoreService {
 
     const points = await this._embedChunks(chunks, document);
 
-    const collection = this._configService.get<string>('QDRANT_COLLECTION', 'rh_documents');
+    const collection = this._configService.get<string>(
+      'QDRANT_COLLECTION',
+      'rh_documents',
+    );
     await this._qdrantService.upsert(collection, points);
 
     return chunks.length;
@@ -90,7 +93,10 @@ export class VectorStoreServiceImplementation implements VectorStoreService {
       }
     }
 
-    if (mimeType === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document') {
+    if (
+      mimeType ===
+      'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+    ) {
       const result = await mammoth.extractRawText({ buffer });
       return result.value;
     }

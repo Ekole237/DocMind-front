@@ -13,7 +13,9 @@ export class ListGuestTokensUseCase {
     private readonly _guestTokenRepository: GuestTokenRepository,
   ) {}
 
-  async execute(filter: GuestTokenListFilter): Promise<{ tokens: GuestToken[]; total: number }> {
+  async execute(
+    filter: GuestTokenListFilter,
+  ): Promise<{ tokens: GuestToken[]; total: number }> {
     return await this._guestTokenRepository.listAll(filter);
   }
 }

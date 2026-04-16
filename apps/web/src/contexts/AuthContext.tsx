@@ -17,18 +17,15 @@ interface AuthContextType {
 export const AuthContext = createContext<AuthContextType | undefined>(undefined)
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [user, setUser] = useState<JwtUser | null>(null)
-  const [isLoading, setIsLoading] = useState(true)
+  const [user, setUser] = useState<JwtUser | null>(() => isAuthenticated() ? getUser() : null)
+  const [isLoading] = useState(false)
   const navigate = useNavigate()
 
-  // Restore auth state on mount
+  // Cleanup token if not authenticated + listen for session expiry
   useEffect(() => {
-    if (isAuthenticated()) {
-      setUser(getUser())
-    } else {
+    if (!isAuthenticated()) {
       removeToken()
     }
-    setIsLoading(false)
 
     const handleExpired = () => {
       removeToken()

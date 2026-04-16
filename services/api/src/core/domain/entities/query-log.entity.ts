@@ -78,17 +78,43 @@ export class QueryLogEntity {
     );
   }
 
-  get id(): string { return this._id; }
-  get userIdHash(): string { return this._userIdHash; }
-  get question(): string { return this._question; }
-  get answer(): string { return this._answer; }
-  get role(): string { return this._role; }
-  get isGuest(): boolean { return this._isGuest; }
-  get isFlagged(): boolean { return this._isFlagged; }
-  get isIgnorance(): boolean { return this._isIgnorance; }
-  get timestamp(): Date { return this._timestamp; }
-  get sourceDocId(): string | null { return this._sourceDocId; }
-  get sourceDocName(): string | null { return this._sourceDocName; }
-  get sourceDriveUrl(): string | null { return this._sourceDriveUrl; }
-  get responseTimeMs(): number | null { return this._responseTimeMs; }
+  get id(): string {
+    return this._id;
+  }
+  get userIdHash(): string {
+    return this._userIdHash;
+  }
+  get question(): string {
+    return this._question;
+  }
+  get answer(): string {
+    return this._answer;
+  }
+  get role(): string {
+    return this._role;
+  }
+  get isGuest(): boolean {
+    return this._isGuest;
+  }
+  get isFlagged(): boolean {
+    return this._isFlagged;
+  }
+  get isIgnorance(): boolean {
+    return this._isIgnorance;
+  }
+  get timestamp(): Date {
+    return this._timestamp;
+  }
+  get sourceDocId(): string | null {
+    return this._sourceDocId;
+  }
+  get sourceDocName(): string | null {
+    return this._sourceDocName;
+  }
+  get sourceDriveUrl(): string | null {
+    return this._sourceDriveUrl;
+  }
+  get responseTimeMs(): number | null {
+    return this._responseTimeMs;
+  }
 }

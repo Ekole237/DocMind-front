@@ -18,7 +18,8 @@ const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
 
 const ALLOWED_MIME_TYPES: Record<string, string> = {
   'application/pdf': 'pdf',
-  'application/vnd.openxmlformats-officedocument.wordprocessingml.document': 'docx',
+  'application/vnd.openxmlformats-officedocument.wordprocessingml.document':
+    'docx',
   'text/plain': 'txt',
 };
 
@@ -35,7 +36,9 @@ export class FileStorageServiceImplementation implements FileStorageService {
       endpoint: `https://${accountId}.r2.cloudflarestorage.com`,
       credentials: {
         accessKeyId: this._config.getOrThrow<string>('R2_ACCESS_KEY_ID'),
-        secretAccessKey: this._config.getOrThrow<string>('R2_SECRET_ACCESS_KEY'),
+        secretAccessKey: this._config.getOrThrow<string>(
+          'R2_SECRET_ACCESS_KEY',
+        ),
       },
     });
 

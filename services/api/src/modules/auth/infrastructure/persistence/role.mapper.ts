@@ -1,8 +1,5 @@
 import { Role } from '#auth/domain/enums/role';
-import {
-  Role as PrismaRoleEnum,
-  type Role as PrismaRole,
-} from '#prisma/enums';
+import { Role as PrismaRoleEnum, type Role as PrismaRole } from '#prisma/enums';
 
 export class RoleMapper {
   static toDomainRole(role: PrismaRole): Role {

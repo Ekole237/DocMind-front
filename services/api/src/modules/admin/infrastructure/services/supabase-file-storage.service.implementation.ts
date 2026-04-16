@@ -4,7 +4,7 @@ import {
   type FileStorageService,
   type UploadedFile,
 } from '#admin/domain/services/file-storage.service';
-import { createClient, type SupabaseClient } from '@supabase/supabase-js';
+import { createClient } from '@supabase/supabase-js';
 import { Injectable, OnModuleInit, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { randomUUID } from 'crypto';
@@ -13,7 +13,8 @@ const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
 
 const ALLOWED_MIME_TYPES: Record<string, string> = {
   'application/pdf': 'pdf',
-  'application/vnd.openxmlformats-officedocument.wordprocessingml.document': 'docx',
+  'application/vnd.openxmlformats-officedocument.wordprocessingml.document':
+    'docx',
   'text/plain': 'txt',
 };
 
@@ -21,9 +22,11 @@ const ALLOWED_MIME_TYPES: Record<string, string> = {
 export class SupabaseFileStorageServiceImplementation
   implements FileStorageService, OnModuleInit
 {
-  private readonly logger = new Logger(SupabaseFileStorageServiceImplementation.name);
-  private _client: SupabaseClient;
-  private _bucket: string;
+  private readonly logger = new Logger(
+    SupabaseFileStorageServiceImplementation.name,
+  );
+  private _client!: ReturnType<typeof createClient>;
+  private _bucket!: string;
 
   constructor(private readonly _config: ConfigService) {}
 
@@ -32,7 +35,10 @@ export class SupabaseFileStorageServiceImplementation
       this._config.getOrThrow<string>('SUPABASE_URL'),
       this._config.getOrThrow<string>('SUPABASE_SERVICE_ROLE_KEY'),
     );
-    this._bucket = this._config.get<string>('SUPABASE_STORAGE_BUCKET', 'documents');
+    this._bucket = this._config.get<string>(
+      'SUPABASE_STORAGE_BUCKET',
+      'documents',
+    );
     this.logger.log(`Storage provider: Supabase | bucket: ${this._bucket}`);
   }
 
@@ -67,7 +73,9 @@ export class SupabaseFileStorageServiceImplementation
       .download(key);
 
     if (error || !data) {
-      throw new Error(`Supabase Storage read failed: ${error?.message ?? 'file not found'}`);
+      throw new Error(
+        `Supabase Storage read failed: ${error?.message ?? 'file not found'}`,
+      );
     }
 
     return Buffer.from(await data.arrayBuffer());
@@ -79,7 +87,9 @@ export class SupabaseFileStorageServiceImplementation
       .remove([key]);
 
     if (error) {
-      this.logger.warn(`Supabase Storage delete failed for key "${key}": ${error.message}`);
+      this.logger.warn(
+        `Supabase Storage delete failed for key "${key}": ${error.message}`,
+      );
     }
   }
 }

@@ -1,5 +1,12 @@
 import { Confidentiality } from '#admin/domain/enums/confidentiality';
-import { IsEnum, IsNotEmpty, IsOptional, IsString, IsUrl, MaxLength } from 'class-validator';
+import {
+  IsEnum,
+  IsNotEmpty,
+  IsOptional,
+  IsString,
+  IsUrl,
+  MaxLength,
+} from 'class-validator';
 
 export class CreateDocumentDto {
   @IsString()

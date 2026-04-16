@@ -19,7 +19,7 @@ export class DocumentRepositoryImplementation implements DocumentRepository {
       orderBy: { createdAt: 'desc' },
     });
 
-    return documents.map(DocumentMapper.toDomain);
+    return documents.map((d) => DocumentMapper.toDomain(d));
   }
 
   async createDocument(dto: CreateDocument): Promise<DocumentEntity> {

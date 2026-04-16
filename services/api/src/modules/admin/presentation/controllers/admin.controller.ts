@@ -8,9 +8,7 @@ import { DeleteDocumentUseCase } from '#admin/application/use-cases/delete-docum
 import { DisableDocumentUseCase } from '#admin/application/use-cases/disable-document.use-case';
 import { EnableDocumentUseCase } from '#admin/application/use-cases/enable-document.use-case';
 import { ExtendGuestTokenUseCase } from '#admin/application/use-cases/extend-guest-token.use-case';
-import {
-  ImportDocumentUseCase,
-} from '#admin/application/use-cases/import-document.use-case';
+import { ImportDocumentUseCase } from '#admin/application/use-cases/import-document.use-case';
 import { IndexDocumentUseCase } from '#admin/application/use-cases/index-document.use-case';
 import { ListAllDocumentsUseCase } from '#admin/application/use-cases/list-all-documents.use-case';
 import { ListFeedbacksUseCase } from '#admin/application/use-cases/list-feelbacks.use-case';
@@ -94,7 +92,12 @@ export class AdminController {
       throw new BadRequestException('Le champ title est requis.');
     }
 
-    if (!confidentialityRaw || !Object.values(Confidentiality).includes(confidentialityRaw as Confidentiality)) {
+    if (
+      !confidentialityRaw ||
+      !Object.values(Confidentiality).includes(
+        confidentialityRaw as Confidentiality,
+      )
+    ) {
       throw new BadRequestException(
         `Le champ confidentiality est requis. Valeurs acceptées : ${Object.values(Confidentiality).join(', ')}.`,
       );

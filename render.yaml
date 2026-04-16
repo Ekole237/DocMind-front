@@ -11,7 +11,7 @@ services:
     region: frankfurt
     plan: free
     buildCommand: npm ci --include=dev && npx prisma generate --schema=services/api/prisma/schema.prisma && npm run build --workspace=services/api
-    startCommand: cd services/api && npx prisma migrate deploy && cd ../.. && node services/api/dist/main.js
+    startCommand: cd services/api && npx prisma migrate deploy && cd ../.. && node services/api/dist/src/main.js
     buildFilter:
       paths:
         - services/api/**

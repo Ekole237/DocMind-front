@@ -10,8 +10,10 @@ export class QdrantService implements OnModuleInit {
   constructor(private config: ConfigService) {}
 
   async onModuleInit() {
+    const apiKey = this.config.get<string>('QDRANT_API_KEY');
     this.client = new QdrantClient({
       url: this.config.get<string>('QDRANT_URL', 'http://localhost:6333'),
+      ...(apiKey ? { apiKey } : {}),
     });
 
     const collection = this.config.get<string>(

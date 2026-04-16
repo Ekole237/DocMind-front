@@ -42,6 +42,8 @@ services:
       # Qdrant Cloud
       - key: QDRANT_URL
         sync: false
+      - key: QDRANT_API_KEY
+        sync: false
       - key: QDRANT_COLLECTION
         value: rh_documents
       - key: EMBEDDING_DIMENSIONS

@@ -10,7 +10,7 @@ services:
     runtime: node
     region: frankfurt
     plan: free
-    buildCommand: npm ci && npm run build --workspace=services/api
+    buildCommand: npm ci --include=dev && npm run build --workspace=services/api
     startCommand: cd services/api && npx prisma migrate deploy && cd ../.. && node services/api/dist/main.js
     buildFilter:
       paths:

@@ -27,23 +27,10 @@ export class QdrantService implements OnModuleInit {
         this.config.get<string>('EMBEDDING_DIMENSIONS', '384'),
         10,
       );
-      const qdrantUrl = this.config.get<string>(
-        'QDRANT_URL',
-        'http://localhost:6333',
-      );
 
-      const response = await fetch(`${qdrantUrl}/collections/${collection}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          vectors: { size: dimensions, distance: 'Cosine' },
-        }),
+      await this.client.createCollection(collection, {
+        vectors: { size: dimensions, distance: 'Cosine' },
       });
-
-      if (!response.ok) {
-        const body = await response.text();
-        throw new Error(`Failed to create Qdrant collection: ${body}`);
-      }
 
       this.logger.log(
         `Collection "${collection}" created (dimensions: ${dimensions})`,

@@ -80,6 +80,14 @@ services:
         sync: false
       - key: ZOHO_REDIRECT_URI
         sync: false
+      - key: ZOHO_ACCOUNTS_URL
+        value: https://accounts.zoho.eu
+
+      # URLs publiques
+      - key: FRONTEND_URL
+        sync: false
+      - key: APP_PUBLIC_URL
+        sync: false
 
       # Email
       - key: MAIL_FROM

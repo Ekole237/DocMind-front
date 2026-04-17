@@ -129,36 +129,38 @@ export function LogsPage() {
 
         {!isLoading && logs.length > 0 && (
           <>
-            <div className="overflow-x-auto rounded-lg border border-border">
+            {/* Desktop table */}
+            <div className="hidden md:block overflow-x-auto rounded-lg border border-border">
               <table className="w-full text-sm">
                 <thead className="border-b border-border bg-muted">
                   <tr>
-                    <th className="px-4 py-3 text-left">Date</th>
-                    <th className="px-4 py-3 text-left">Question</th>
-                    <th className="px-4 py-3 text-left">Réponse</th>
-                    <th className="px-4 py-3 text-left">Rôle</th>
-                    <th className="px-4 py-3 text-left">Temps</th>
-                    <th className="px-4 py-3 text-left">Flags</th>
+                    <th className="px-4 py-3 text-left font-medium">Date</th>
+                    <th className="px-4 py-3 text-left font-medium">Question</th>
+                    <th className="px-4 py-3 text-left font-medium">Réponse</th>
+                    <th className="px-4 py-3 text-left font-medium">Rôle</th>
+                    <th className="px-4 py-3 text-left font-medium">Temps</th>
+                    <th className="px-4 py-3 text-left font-medium">Flags</th>
                   </tr>
                 </thead>
                 <tbody>
                   {logs.map((log) => (
-                    <tr key={log.id} className="border-b border-border hover:bg-muted/50">
+                    <tr key={log._id} className="border-b border-border hover:bg-muted/50">
                       <td className="px-4 py-3 text-xs text-muted-foreground whitespace-nowrap">
-                        {new Date(log.timestamp).toLocaleDateString("fr-FR")}
+                        <div>{new Date(log._timestamp).toLocaleDateString("fr-FR", { day: "2-digit", month: "short", year: "numeric" })}</div>
+                        <div className="text-[11px] opacity-70">{new Date(log._timestamp).toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" })}</div>
                       </td>
-                      <td className="px-4 py-3 max-w-[200px]">
-                        <span className="line-clamp-2 text-xs">{log.question}</span>
+                      <td className="px-4 py-3 max-w-[220px]">
+                        <span className="line-clamp-2 text-xs">{log._question}</span>
                       </td>
-                      <td className="px-4 py-3 max-w-[200px]">
-                        <span className="line-clamp-2 text-xs text-muted-foreground">{log.answer}</span>
+                      <td className="px-4 py-3 max-w-[220px]">
+                        <span className="line-clamp-2 text-xs text-muted-foreground">{log._answer}</span>
                       </td>
-                      <td className="px-4 py-3 text-xs">{log.role}</td>
-                      <td className="px-4 py-3 text-xs text-muted-foreground">{log.responseTimeMs}ms</td>
+                      <td className="px-4 py-3 text-xs capitalize">{log._role}</td>
+                      <td className="px-4 py-3 text-xs text-muted-foreground whitespace-nowrap">{log._responseTimeMs} ms</td>
                       <td className="px-4 py-3">
-                        <div className="flex gap-1">
-                          {log.isFlagged && <Badge variant="pending">Signalé</Badge>}
-                          {log.isIgnorance && <Badge variant="destructive">Sans rép.</Badge>}
+                        <div className="flex flex-wrap gap-1">
+                          {log._isFlagged && <Badge variant="pending">Signalé</Badge>}
+                          {log._isIgnorance && <Badge variant="destructive">Sans rép.</Badge>}
                         </div>
                       </td>
                     </tr>
@@ -167,21 +169,40 @@ export function LogsPage() {
               </table>
             </div>
 
-            {/* Blind pagination */}
+            {/* Mobile cards */}
+            <div className="md:hidden space-y-3">
+              {logs.map((log) => (
+                <div key={log._id} className="rounded-lg border border-border bg-card p-4 space-y-2">
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="text-xs text-muted-foreground">
+                      <span className="font-medium text-foreground">
+                        {new Date(log._timestamp).toLocaleDateString("fr-FR", { day: "2-digit", month: "short", year: "numeric" })}
+                      </span>
+                      {" · "}
+                      {new Date(log._timestamp).toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" })}
+                    </div>
+                    <div className="flex shrink-0 flex-wrap gap-1">
+                      <Badge variant="outline" className="capitalize text-[11px]">{log._role}</Badge>
+                      {log._isFlagged && <Badge variant="pending">Signalé</Badge>}
+                      {log._isIgnorance && <Badge variant="destructive">Sans rép.</Badge>}
+                    </div>
+                  </div>
+                  <div>
+                    <p className="text-xs font-medium text-foreground line-clamp-2">{log._question}</p>
+                    <p className="mt-1 text-xs text-muted-foreground line-clamp-3">{log._answer}</p>
+                  </div>
+                  <div className="text-[11px] text-muted-foreground">{log._responseTimeMs} ms</div>
+                </div>
+              ))}
+            </div>
+
+            {/* Pagination */}
             <div className="mt-4 flex items-center justify-between">
-              <Button
-                variant="outline"
-                onClick={() => fetchLogs(page - 1)}
-                disabled={page === 1}
-              >
+              <Button variant="outline" onClick={() => fetchLogs(page - 1)} disabled={page === 1}>
                 Précédent
               </Button>
               <span className="text-sm text-muted-foreground">Page {page}</span>
-              <Button
-                variant="outline"
-                onClick={() => fetchLogs(page + 1)}
-                disabled={logs.length < LIMIT}
-              >
+              <Button variant="outline" onClick={() => fetchLogs(page + 1)} disabled={logs.length < LIMIT}>
                 Suivant
               </Button>
             </div>

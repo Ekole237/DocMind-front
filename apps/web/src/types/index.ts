@@ -110,18 +110,18 @@ export interface AdminFeedback {
 }
 
 export interface AdminQueryLog {
-  id: string
-  question: string
-  answer: string
-  role: string
-  isGuest: boolean
-  isIgnorance: boolean
-  isFlagged: boolean
-  sourceDocId: string | null
-  sourceDocName: string | null
-  sourceDriveUrl: string | null
-  responseTimeMs: number
-  timestamp: string
+  _id: string
+  _question: string
+  _answer: string
+  _role: string
+  _isGuest: boolean
+  _isIgnorance: boolean
+  _isFlagged: boolean
+  _sourceDocId: string | null
+  _sourceDocName: string | null
+  _sourceDriveUrl: string | null
+  _responseTimeMs: number
+  _timestamp: string
 }
 
 export interface GuestToken {

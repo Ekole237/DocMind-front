@@ -24,8 +24,9 @@ export function useChat() {
     isOpen: false,
     queryLogId: "",
   })
-  
+
   const scrollRef = useRef<HTMLDivElement>(null)
+  const lastQuestionRef = useRef<string>("")
 
   useEffect(() => {
     if (scrollRef.current) {
@@ -33,29 +34,8 @@ export function useChat() {
     }
   }, [messages, isLoading])
 
-  const sendMessage = async (text: string) => {
-    const question = text.trim()
-
-    setInputError(null)
-    if (question.length < MIN_LENGTH) {
-      setInputError(`La question doit contenir au moins ${MIN_LENGTH} caractères.`)
-      return
-    }
-    if (question.length > MAX_LENGTH) {
-      setInputError(`La question ne peut pas dépasser ${MAX_LENGTH} caractères.`)
-      return
-    }
-    if (isLoading || rateLimited) return
-
-    const userMsg: ChatMessage = {
-      id: crypto.randomUUID(),
-      role: "user",
-      content: question,
-    }
-    setMessages((prev) => [...prev, userMsg])
-    setInputValue("")
+  const executeQuery = async (question: string) => {
     setIsLoading(true)
-
     try {
       const { data } = await apiClient.post<ChatResponse>("/chat/query", { question })
 
@@ -74,29 +54,72 @@ export function useChat() {
       setMessages((prev) => [...prev, assistantMsg])
     } catch (err) {
       const axiosErr = err as AxiosError
-      if (axiosErr.response?.status === 429) {
+      const status = axiosErr.response?.status
+
+      let errorType: ChatMessage["errorType"] = "unknown"
+      let content = "Une erreur s'est produite. Réessayez."
+
+      if (!axiosErr.response) {
+        errorType = "network"
+        content = "Vérifiez votre connexion internet et réessayez."
+      } else if (status === 429) {
+        errorType = "rate_limit"
+        content = "Vous avez envoyé trop de questions. Patientez quelques minutes."
         setRateLimited(true)
         setTimeout(() => setRateLimited(false), 60_000)
-        const errorMsg: ChatMessage = {
-          id: crypto.randomUUID(),
-          role: "assistant",
-          content: "⚠️ Trop de questions envoyées. Réessayez dans quelques minutes.",
-        }
-        setMessages((prev) => [...prev, errorMsg])
-      } else {
-        const errorMsg: ChatMessage = {
-          id: crypto.randomUUID(),
-          role: "assistant",
-          content: "⚠️ Une erreur est survenue. Réessayez.",
-        }
-        setMessages((prev) => [...prev, errorMsg])
+      } else if (status && status >= 500) {
+        errorType = "server"
+        content = "Un problème est survenu de notre côté. Réessayez dans un instant."
       }
+
+      setMessages((prev) => [
+        ...prev,
+        {
+          id: crypto.randomUUID(),
+          role: "assistant",
+          content,
+          isError: true,
+          errorType,
+        },
+      ])
     } finally {
       setIsLoading(false)
     }
   }
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const sendMessage = async (text: string) => {
+    const question = text.trim()
+
+    setInputError(null)
+    if (question.length < MIN_LENGTH) {
+      setInputError(`La question doit contenir au moins ${MIN_LENGTH} caractères.`)
+      return
+    }
+    if (question.length > MAX_LENGTH) {
+      setInputError(`La question ne peut pas dépasser ${MAX_LENGTH} caractères.`)
+      return
+    }
+    if (isLoading || rateLimited) return
+
+    lastQuestionRef.current = question
+    setMessages((prev) => [
+      ...prev,
+      { id: crypto.randomUUID(), role: "user", content: question },
+    ])
+    setInputValue("")
+    await executeQuery(question)
+  }
+
+  const retryLastMessage = async () => {
+    if (!lastQuestionRef.current || isLoading || rateLimited) return
+    setMessages((prev) => {
+      const last = prev[prev.length - 1]
+      return last?.isError ? prev.slice(0, -1) : prev
+    })
+    await executeQuery(lastQuestionRef.current)
+  }
+
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
     await sendMessage(inputValue)
   }
@@ -130,6 +153,7 @@ export function useChat() {
     scrollRef,
     handleSubmit,
     sendMessage,
+    retryLastMessage,
     handleFeedback,
     MAX_LENGTH,
   }

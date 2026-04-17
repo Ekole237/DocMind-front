@@ -73,6 +73,8 @@ export interface ChatMessage {
   queryLogId?: string
   hasFeedback?: boolean
   responseTimeMs?: number
+  isError?: boolean
+  errorType?: "rate_limit" | "server" | "network" | "unknown"
 }
 
 // ============= ADMIN TYPES =============

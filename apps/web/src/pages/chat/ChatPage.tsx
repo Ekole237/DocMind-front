@@ -120,6 +120,7 @@ export function ChatPage() {
     scrollRef,
     handleSubmit,
     sendMessage,
+    retryLastMessage,
     handleFeedback,
     MAX_LENGTH,
   } = useChat()
@@ -176,15 +177,18 @@ export function ChatPage() {
                   role={msg.role}
                   content={msg.content}
                   responseTimeMs={msg.role === "assistant" ? msg.responseTimeMs : undefined}
+                  isError={msg.isError}
+                  errorType={msg.errorType}
+                  onRetry={msg.isError ? retryLastMessage : undefined}
                 />
 
-                {msg.role === "assistant" && msg.source && (
+                {msg.role === "assistant" && !msg.isError && msg.source && (
                   <div className="pl-12">
                     <SourceCitation source={msg.source} />
                   </div>
                 )}
 
-                {msg.role === "assistant" && msg.queryLogId && !msg.isIgnorance && (
+                {msg.role === "assistant" && !msg.isError && msg.queryLogId && !msg.isIgnorance && (
                   <div className="pl-12 opacity-0 transition-opacity group-hover:opacity-100">
                     <Button
                       size="sm"
@@ -214,12 +218,6 @@ export function ChatPage() {
         {/* Input Area */}
         <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-background via-background to-transparent pt-6 pb-4">
           <div className="mx-auto w-full max-w-3xl px-4 sm:px-6">
-            {rateLimited && (
-              <p className="mb-2 text-center text-xs font-medium text-destructive">
-                Limite atteinte — veuillez patienter quelques minutes.
-              </p>
-            )}
-            
             <form
               onSubmit={handleSubmit}
               className={`relative flex items-end gap-2 rounded-2xl border bg-card p-1 shadow-sm transition-shadow focus-within:ring-1 focus-within:ring-ring ${

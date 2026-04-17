@@ -20,6 +20,19 @@ const IGNORANCE_RESPONSE =
   "Je n'ai pas trouvé d'information sur ce sujet dans la base documentaire RH.";
 const TOP_K = 5;
 
+const CONVERSATIONAL_PATTERNS = [
+  /^(bonjour|bonsoir|salut|coucou|hello|hi|hey)\b/i,
+  /^(merci|thank you|thanks)\b/i,
+  /^(au revoir|bye|à bientôt|bonne journée|bonne soirée)\b/i,
+  /^comment (ça va|vas-tu|allez-vous|tu vas)\b/i,
+  /^(ça va|comment ça)\b/i,
+];
+
+function isConversational(question: string): boolean {
+  const trimmed = question.trim();
+  return CONVERSATIONAL_PATTERNS.some((re) => re.test(trimmed));
+}
+
 export interface SourceRef {
   documentName: string;
   lastModified: string;
@@ -59,6 +72,33 @@ export class QueryRagUseCase {
     const threshold = parseFloat(
       this._configService.get<string>('SIMILARITY_THRESHOLD', '0.5'),
     );
+
+    if (isConversational(dto.question)) {
+      const answer = await this._llmService.completeConversational(
+        dto.question,
+      );
+      const responseTimeMs = Date.now() - start;
+      const queryLog = QueryLogEntity.create(
+        userIdHash,
+        dto.question,
+        answer,
+        role,
+        isGuest,
+        false,
+        null,
+        null,
+        null,
+        responseTimeMs,
+      );
+      await this._queryLogRepository.save(queryLog);
+      return {
+        answer,
+        isIgnorance: false,
+        source: null,
+        queryLogId: queryLog.id,
+        responseTimeMs,
+      };
+    }
 
     const chunks = await this._vectorSearchService.searchChunks(
       dto.question,

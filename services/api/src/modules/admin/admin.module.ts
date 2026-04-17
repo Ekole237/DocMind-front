@@ -25,6 +25,7 @@ import { FileStorageServiceImplementation } from '#admin/infrastructure/services
 import { LocalFileStorageServiceImplementation } from '#admin/infrastructure/services/local-file-storage.service.implementation';
 import { SupabaseFileStorageServiceImplementation } from '#admin/infrastructure/services/supabase-file-storage.service.implementation';
 import { QueryLogsRepositoryImplementation } from '#admin/infrastructure/repositories/query-logs.repository.implementation';
+import { ConfigService } from '@nestjs/config';
 import { VectorStoreServiceImplementation } from '#admin/infrastructure/services/vector-store.service.implementation';
 import { AdminController } from '#admin/presentation/controllers/admin.controller';
 import { GUEST_TOKEN_REPOSITORY } from '#auth/domain/repositories/guest-token.repository';
@@ -83,12 +84,13 @@ import { AuthModule } from '../auth/auth.module';
     },
     {
       provide: FILE_STORAGE_SERVICE,
-      useClass:
-        process.env.STORAGE_PROVIDER === 'local'
-          ? LocalFileStorageServiceImplementation
-          : process.env.STORAGE_PROVIDER === 'supabase'
-            ? SupabaseFileStorageServiceImplementation
-            : FileStorageServiceImplementation,
+      useFactory: (config: ConfigService) => {
+        const provider = config.get<string>('STORAGE_PROVIDER', 'r2');
+        if (provider === 'local') return new LocalFileStorageServiceImplementation(config);
+        if (provider === 'supabase') return new SupabaseFileStorageServiceImplementation(config);
+        return new FileStorageServiceImplementation(config);
+      },
+      inject: [ConfigService],
     },
   ],
 })

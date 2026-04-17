@@ -42,7 +42,10 @@ export function LoginPage() {
             <Bot className="h-7 w-7 text-primary-foreground" />
           </div>
           <div className="space-y-1">
-            <h1 className="text-3xl font-bold tracking-tight text-foreground">Doc Mind</h1>
+            <div className="flex items-baseline gap-2">
+              <h1 className="text-3xl font-bold tracking-tight text-foreground">Doc Mind</h1>
+              <span className="text-sm italic text-primary font-bold" style={{ fontFamily: "'Lucky Beauty', cursive" }}>by Ejara</span>
+            </div>
             <p className="text-sm text-muted-foreground">
               Assistant RH intelligent et base documentaire
             </p>

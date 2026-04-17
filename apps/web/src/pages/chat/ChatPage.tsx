@@ -1,6 +1,6 @@
 import { Button } from "@workspace/ui/components/button"
 import { Input } from "@workspace/ui/components/input"
-import { History, LogOut, Menu, X, Send, Bot, FileText, Search, Sparkles } from "lucide-react"
+import { Bot, FileText, History, LogOut, Menu, Search, Send, Sparkles, X } from "lucide-react"
 import { useState } from "react"
 import { useNavigate } from "react-router-dom"
 import { FeedbackModal } from "../../components/chat/FeedbackModal"
@@ -39,7 +39,10 @@ function ChatSidebar({
         <div className="flex h-14 items-center justify-between border-b border-border/50 px-4">
           <div className="flex items-center gap-2 font-semibold">
             <Bot className="h-5 w-5 text-primary" />
-            <span>Doc Mind</span>
+            <div className="flex flex-col leading-tight">
+              <span>Doc Mind</span>
+              <span className="text-[10px] italic text-primary font-bold tracking-wide" style={{ fontFamily: "'Lucky Beauty', cursive" }}>by Ejara</span>
+            </div>
           </div>
           <button className="md:hidden" onClick={onClose} aria-label="Fermer le menu">
             <X className="h-5 w-5 text-muted-foreground" />

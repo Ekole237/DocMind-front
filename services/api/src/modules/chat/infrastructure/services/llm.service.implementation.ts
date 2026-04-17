@@ -1,15 +1,13 @@
 import { type LlmService } from '#chat/domain/services/llm.service';
 import { type DocumentChunk } from '#chat/domain/services/vector-search.service';
 import { PromptBuilder } from '#chat/infrastructure/services/prompt-builder';
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import Anthropic from '@anthropic-ai/sdk';
 import OpenAI from 'openai';
 
 @Injectable()
 export class LlmServiceImplementation implements LlmService {
-  private readonly logger = new Logger(LlmServiceImplementation.name);
-
   constructor(
     private readonly _configService: ConfigService,
     private readonly _promptBuilder: PromptBuilder,
@@ -29,6 +27,21 @@ export class LlmServiceImplementation implements LlmService {
     }
 
     return this._callOpenAi(systemPrompt, userPrompt);
+  }
+
+  async completeConversational(message: string): Promise<string> {
+    const provider = this._configService.get<string>('LLM_PROVIDER', 'openai');
+    const systemPrompt = this._promptBuilder.CONVERSATIONAL_SYSTEM_PROMPT;
+
+    if (provider === 'anthropic') {
+      return this._callAnthropic(systemPrompt, message);
+    }
+
+    if (provider === 'groq') {
+      return this._callGroq(systemPrompt, message);
+    }
+
+    return this._callOpenAi(systemPrompt, message);
   }
 
   private async _callAnthropic(

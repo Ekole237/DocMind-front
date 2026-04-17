@@ -33,7 +33,11 @@ export function AdminLayout({ children, currentPage }: AdminLayoutProps) {
       >
         <div className="flex flex-col h-full p-4">
           <div className="mb-6">
-            <h1 className="text-lg font-semibold">Doc Mind - Admin</h1>
+            <div className="flex items-baseline gap-2">
+              <h1 className="text-lg font-semibold">Doc Mind</h1>
+              <span className="text-xs italic text-primary font-bold" style={{ fontFamily: "'Lucky Beauty', cursive" }}>by Ejara</span>
+            </div>
+            <p className="text-xs text-muted-foreground">Admin</p>
           </div>
 
           <nav className="flex-1 space-y-1">

@@ -8,6 +8,7 @@ import {
 } from '#chat/domain/services/llm.service';
 import {
   VECTOR_SEARCH_SERVICE,
+  type DocumentChunk,
   type VectorSearchService,
 } from '#chat/domain/services/vector-search.service';
 import { ConfigService } from '@nestjs/config';
@@ -38,6 +39,8 @@ export interface SourceRef {
   lastModified: string;
   driveUrl: string;
   confidenceScore: number;
+  content?: string;
+  exactQuote?: string | null;
 }
 
 export interface ChatResponse {
@@ -46,6 +49,39 @@ export interface ChatResponse {
   source: SourceRef | null;
   queryLogId: string;
   responseTimeMs: number;
+}
+
+function resolveSourceChunk(
+  chunks: DocumentChunk[],
+  sourceChunkId: string | null,
+  exactQuote: string | null,
+): DocumentChunk | null {
+  if (sourceChunkId) {
+    const sourceChunk = chunks.find((chunk) => chunk.id === sourceChunkId);
+    if (sourceChunk) {
+      return sourceChunk;
+    }
+  }
+
+  if (exactQuote) {
+    const sourceChunk = chunks.find((chunk) => chunk.content.includes(exactQuote));
+    if (sourceChunk) {
+      return sourceChunk;
+    }
+  }
+
+  return chunks[0] ?? null;
+}
+
+function getVerifiedExactQuote(
+  sourceChunk: DocumentChunk | null,
+  exactQuote: string | null,
+): string | null {
+  if (!sourceChunk || !exactQuote) {
+    return null;
+  }
+
+  return sourceChunk.content.includes(exactQuote) ? exactQuote : null;
 }
 
 @Injectable()
@@ -108,38 +144,50 @@ export class QueryRagUseCase {
     );
 
     const isIgnorance = chunks.length === 0;
-    const primaryChunk = chunks[0] ?? null;
+    let sourceChunk: DocumentChunk | null = chunks[0] ?? null;
 
-    const answer = isIgnorance
-      ? IGNORANCE_RESPONSE
-      : await this._llmService.complete(chunks, dto.question);
+    let answerText = IGNORANCE_RESPONSE;
+    let exactQuote: string | null = null;
+
+    if (!isIgnorance) {
+      const response = await this._llmService.complete(chunks, dto.question);
+      answerText = response.answer;
+      sourceChunk = resolveSourceChunk(
+        chunks,
+        response.sourceChunkId,
+        response.exactQuote,
+      );
+      exactQuote = getVerifiedExactQuote(sourceChunk, response.exactQuote);
+    }
 
     const responseTimeMs = Date.now() - start;
 
     const queryLog = QueryLogEntity.create(
       userIdHash,
       dto.question,
-      answer,
+      answerText,
       role,
       isGuest,
       isIgnorance,
-      primaryChunk?.documentId ?? null,
-      primaryChunk?.title ?? null,
-      primaryChunk?.driveUrl ?? null,
+      sourceChunk?.documentId ?? null,
+      sourceChunk?.title ?? null,
+      sourceChunk?.driveUrl ?? null,
       responseTimeMs,
     );
 
     await this._queryLogRepository.save(queryLog);
 
     return {
-      answer,
+      answer: answerText,
       isIgnorance,
-      source: primaryChunk
+      source: sourceChunk
         ? {
-            documentName: primaryChunk.title,
-            lastModified: primaryChunk.lastModified.toISOString(),
-            driveUrl: primaryChunk.driveUrl ?? '',
-            confidenceScore: primaryChunk.confidenceScore,
+            documentName: sourceChunk.title,
+            lastModified: sourceChunk.lastModified.toISOString(),
+            driveUrl: sourceChunk.driveUrl ?? '',
+            confidenceScore: sourceChunk.confidenceScore,
+            content: sourceChunk.content,
+            exactQuote,
           }
         : null,
       queryLogId: queryLog.id,

@@ -3,6 +3,10 @@ import {
   type QueryLogRepository,
 } from '#chat/domain/repositories/query-log.repository';
 import {
+  CHAT_SESSION_REPOSITORY,
+  type ChatSessionRepository,
+} from '#chat/domain/repositories/chat-session.repository';
+import {
   LLM_SERVICE,
   type LlmService,
 } from '#chat/domain/services/llm.service';
@@ -12,9 +16,11 @@ import {
 } from '#chat/domain/services/vector-search.service';
 import { ConfigService } from '@nestjs/config';
 import { Inject, Injectable } from '@nestjs/common';
+import { ChatSessionEntity } from 'src/core/domain/entities/chat-session.entity';
 import { QueryLogEntity } from 'src/core/domain/entities/query-log.entity';
 import { hashUserId } from 'src/core/utils/hash.util';
 import { QueryDto } from '../dto/query.dto';
+import { NotFoundException } from '@nestjs/common';
 
 const IGNORANCE_RESPONSE =
   "Je n'ai pas trouvé d'information sur ce sujet dans la base documentaire RH.";
@@ -46,6 +52,7 @@ export interface ChatResponse {
   source: SourceRef | null;
   queryLogId: string;
   responseTimeMs: number;
+  context_id: string;
 }
 
 @Injectable()
@@ -57,6 +64,8 @@ export class QueryRagUseCase {
     private readonly _llmService: LlmService,
     @Inject(QUERY_LOG_REPOSITORY)
     private readonly _queryLogRepository: QueryLogRepository,
+    @Inject(CHAT_SESSION_REPOSITORY)
+    private readonly _chatSessionRepository: ChatSessionRepository,
     private readonly _configService: ConfigService,
   ) {}
 
@@ -73,6 +82,21 @@ export class QueryRagUseCase {
       this._configService.get<string>('SIMILARITY_THRESHOLD', '0.5'),
     );
 
+    let chatSessionId = dto.context_id;
+
+    if (chatSessionId) {
+      const session = await this._chatSessionRepository.findById(chatSessionId);
+      if (!session || session.userIdHash !== userIdHash) {
+        throw new NotFoundException('Session not found');
+      }
+    } else {
+      const title =
+        dto.question.substring(0, 40) + (dto.question.length > 40 ? '...' : '');
+      const newSession = ChatSessionEntity.create(userIdHash, title);
+      await this._chatSessionRepository.save(newSession);
+      chatSessionId = newSession.id;
+    }
+
     if (isConversational(dto.question)) {
       const answer = await this._llmService.completeConversational(
         dto.question,
@@ -85,6 +109,7 @@ export class QueryRagUseCase {
         role,
         isGuest,
         false,
+        chatSessionId,
         null,
         null,
         null,
@@ -97,6 +122,7 @@ export class QueryRagUseCase {
         source: null,
         queryLogId: queryLog.id,
         responseTimeMs,
+        context_id: chatSessionId,
       };
     }
 
@@ -123,6 +149,7 @@ export class QueryRagUseCase {
       role,
       isGuest,
       isIgnorance,
+      chatSessionId,
       primaryChunk?.documentId ?? null,
       primaryChunk?.title ?? null,
       primaryChunk?.driveUrl ?? null,
@@ -144,6 +171,7 @@ export class QueryRagUseCase {
         : null,
       queryLogId: queryLog.id,
       responseTimeMs,
+      context_id: chatSessionId,
     };
   }
 }

@@ -8,6 +8,10 @@ export const ENDPOINTS = {
   activateGuest: (token: string) => `/auth/guest/activate?token=${token}`,
   requestMagicLink: 'auth/guest/magic-link',
   activateMagicLink: (token: string) => `/auth/guest/magic-link/activate?token=${token}`,
+  chat: {
+    sessions: '/chat/sessions',
+    sessionLogs: (id: string) => `/chat/sessions/${id}/logs`,
+  },
   admin: {
     dashboard: '/admin/dashboard',
     documents: '/admin/documents',

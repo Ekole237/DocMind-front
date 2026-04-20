@@ -102,7 +102,16 @@ import type {
   GuestToken,
   CreateGuestTokenResult,
   ExtendGuestTokenResult,
+  ChatSession,
+  ChatMessage,
 } from "../types"
+
+export const chat = {
+  getSessions: (): Promise<ChatSession[]> =>
+    apiClient.get<ChatSession[]>(ENDPOINTS.chat.sessions).then((r) => r.data),
+  getSessionLogs: (id: string): Promise<ChatMessage[]> =>
+    apiClient.get<ChatMessage[]>(ENDPOINTS.chat.sessionLogs(id)).then((r) => r.data),
+}
 
 export const admin = {
   // Dashboard

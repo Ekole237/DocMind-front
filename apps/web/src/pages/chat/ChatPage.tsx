@@ -8,6 +8,8 @@ import { MessageBubble } from "../../components/chat/MessageBubble"
 import { SourceCitation } from "../../components/chat/SourceCitation"
 import { useAuth } from "../../hooks/useAuth"
 import { useChat } from "./useChat"
+import type { ChatSession } from "../../types"
+import { MessageSquare } from "lucide-react"
 
 // --- PRESENTATIONAL COMPONENTS ---
 
@@ -24,12 +26,18 @@ function ChatSidebar({
   onHistoryClick,
   onLogout,
   onNewChat,
+  sessions,
+  currentSessionId,
+  onSessionClick,
 }: {
   isOpen: boolean
   onClose: () => void
   onHistoryClick: () => void
   onLogout: () => void
   onNewChat: () => void
+  sessions: ChatSession[]
+  currentSessionId: string | null
+  onSessionClick: (id: string) => void
 }) {
   return (
     <>
@@ -70,8 +78,35 @@ function ChatSidebar({
             onClick={onHistoryClick}
           >
             <History className="h-4 w-4" />
-            Historique
+            Historique complet
           </Button>
+
+          <div className="mt-6">
+            <h3 className="mb-2 px-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+              Discussions récentes
+            </h3>
+            <div className="space-y-1">
+              {sessions.map((session) => (
+                <Button
+                  key={session.id}
+                  variant={currentSessionId === session.id ? "secondary" : "ghost"}
+                  className="w-full justify-start gap-3 text-left font-normal"
+                  onClick={() => {
+                    onSessionClick(session.id)
+                    if (window.innerWidth < 768) onClose()
+                  }}
+                >
+                  <MessageSquare className="h-4 w-4 shrink-0" />
+                  <span className="truncate">{session.title}</span>
+                </Button>
+              ))}
+              {sessions.length === 0 && (
+                <p className="px-4 text-xs text-muted-foreground italic">
+                  Aucune discussion récente.
+                </p>
+              )}
+            </div>
+          </div>
         </nav>
 
         <div className="border-t border-border/50 p-4">
@@ -137,6 +172,9 @@ export function ChatPage() {
     retryLastMessage,
     handleFeedback,
     clearSession,
+    loadSession,
+    sessions,
+    sessionId,
     MAX_LENGTH,
   } = useChat()
 
@@ -148,6 +186,9 @@ export function ChatPage() {
         onHistoryClick={() => navigate("/history")}
         onLogout={logout}
         onNewChat={clearSession}
+        sessions={sessions}
+        currentSessionId={sessionId}
+        onSessionClick={loadSession}
       />
 
       <main className="flex flex-1 flex-col overflow-hidden relative">

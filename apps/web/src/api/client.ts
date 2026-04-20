@@ -2,8 +2,8 @@ import type { AxiosInstance } from "axios"
 import axios, { AxiosError } from "axios"
 import type { ApiError } from "../types"
 import { getToken, removeToken } from "../utils/storage"
+import { API_URL, ENDPOINTS } from "./endpoints"
 
-const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3001/api"
 
 export const API_BASE_URL = API_URL
 
@@ -41,7 +41,7 @@ apiClient.interceptors.response.use(
 // Login — le backend retourne un JWT brut (string)
 export async function login(email: string, password: string, _hp = ""): Promise<string> {
   try {
-    const response = await apiClient.post<string>("/auth/login", { email, password, _hp }, {
+    const response = await apiClient.post<string>(ENDPOINTS.login, { email, password, _hp }, {
       responseType: "text",
     })
     return response.data
@@ -56,7 +56,7 @@ export async function login(email: string, password: string, _hp = ""): Promise<
 
 export async function activateGuest(token: string): Promise<{ access_token: string }> {
   try {
-    const response = await apiClient.get<{ access_token: string }>(`/auth/guest/activate?token=${token}`)
+    const response = await apiClient.get<{ access_token: string }>(ENDPOINTS.activateGuest(token))
     return response.data
   } catch (err) {
     const axiosError = err as AxiosError<ApiError>
@@ -69,7 +69,7 @@ export async function activateGuest(token: string): Promise<{ access_token: stri
 
 export async function requestMagicLink(email: string, _hp = ""): Promise<{ message: string }> {
   try {
-    const response = await apiClient.post<{ message: string }>("/auth/guest/magic-link", { email, _hp })
+    const response = await apiClient.post<{ message: string }>(ENDPOINTS.requestMagicLink, { email, _hp })
     return response.data
   } catch (err) {
     const axiosError = err as AxiosError<ApiError>
@@ -82,7 +82,7 @@ export async function requestMagicLink(email: string, _hp = ""): Promise<{ messa
 
 export async function activateMagicLink(token: string): Promise<{ access_token: string }> {
   try {
-    const response = await apiClient.get<{ access_token: string }>(`/auth/guest/magic-link/activate?token=${token}`)
+    const response = await apiClient.get<{ access_token: string }>(ENDPOINTS.activateMagicLink(token))
     return response.data
   } catch (err) {
     const axiosError = err as AxiosError<ApiError>
@@ -107,11 +107,11 @@ import type {
 export const admin = {
   // Dashboard
   getDashboard: (): Promise<DashboardMetrics> =>
-    apiClient.get<DashboardMetrics>("/admin/dashboard").then((r) => r.data),
+    apiClient.get<DashboardMetrics>(ENDPOINTS.admin.dashboard).then((r) => r.data),
 
   // Documents
   listDocuments: (): Promise<AdminDocument[]> =>
-    apiClient.get<AdminDocument[]>("/admin/documents").then((r) =>
+    apiClient.get<AdminDocument[]>(ENDPOINTS.admin.documents).then((r) =>
       Array.isArray(r.data) ? r.data : []
     ),
 
@@ -126,7 +126,7 @@ export const admin = {
     formData.append("file", data.file)
 
     return apiClient
-      .post<AdminDocument>("/admin/documents", formData, {
+      .post<AdminDocument>(ENDPOINTS.admin.documents, formData, {
         headers: {
           "Content-Type": "multipart/form-data",
         },
@@ -137,23 +137,23 @@ export const admin = {
   indexDocument: (id: string) =>
     apiClient
       .post<{ status: string; documentId: string; startedAt: string }>(
-        `/admin/documents/${id}/index`
+        ENDPOINTS.admin.documentsByIdIndex(id)
       )
       .then((r) => r.data),
 
   disableDocument: (id: string): Promise<AdminDocument> =>
-    apiClient.patch<AdminDocument>(`/admin/documents/${id}/disable`).then((r) => r.data),
+    apiClient.patch<AdminDocument>(ENDPOINTS.admin.documentsByIdDisable(id)).then((r) => r.data),
 
   enableDocument: (id: string) =>
     apiClient
-      .patch<{ status: string }>(`/admin/documents/${id}/enable`)
+      .patch<{ status: string }>(ENDPOINTS.admin.documentsByIdEnable(id))
       .then((r) => r.data),
 
   deleteDocument: (id: string): Promise<{ deleted: boolean }> =>
-    apiClient.delete<{ deleted: boolean }>(`/admin/documents/${id}`).then((r) => r.data),
+    apiClient.delete<{ deleted: boolean }>(ENDPOINTS.admin.documentsByIdDelete(id)).then((r) => r.data),
 
   reindexAll: (): Promise<{ status: string }> =>
-    apiClient.post<{ status: string }>("/admin/reindex", { confirm: true }).then((r) => r.data),
+    apiClient.post<{ status: string }>(ENDPOINTS.admin.reindex, { confirm: true }).then((r) => r.data),
 
   // Feedbacks
   listFeedbacks: (
@@ -161,13 +161,13 @@ export const admin = {
     page: number
   ): Promise<{ feedbacks: AdminFeedback[]; total: number }> =>
     apiClient
-      .get<{ feedbacks: AdminFeedback[]; total: number }>("/admin/feedbacks", {
+      .get<{ feedbacks: AdminFeedback[]; total: number }>(ENDPOINTS.admin.feedbacks, {
         params: { status: status === "all" ? undefined : status, page },
       })
       .then((r) => r.data),
 
   resolveFeedback: (id: string): Promise<AdminFeedback> =>
-    apiClient.patch<AdminFeedback>(`/admin/feedbacks/${id}/resolve`).then((r) => r.data),
+    apiClient.patch<AdminFeedback>(ENDPOINTS.admin.feedbacksByIdResolve(id)).then((r) => r.data),
 
   // Logs
   listLogs: (filters: {
@@ -179,7 +179,7 @@ export const admin = {
     limit?: number
   }): Promise<AdminQueryLog[]> =>
     apiClient
-      .get<AdminQueryLog[]>("/admin/logs", { params: filters })
+      .get<AdminQueryLog[]>(ENDPOINTS.admin.logs, { params: filters })
       .then((r) => (Array.isArray(r.data) ? r.data : [])),
 
   // Guests
@@ -188,7 +188,7 @@ export const admin = {
     page?: number
   ): Promise<{ tokens: GuestToken[]; total: number }> =>
     apiClient
-      .get<{ tokens: GuestToken[]; total: number }>("/admin/guests", {
+      .get<{ tokens: GuestToken[]; total: number }>(ENDPOINTS.admin.guests, {
         params: {
           active: active === undefined ? undefined : String(active),
           page,
@@ -202,15 +202,15 @@ export const admin = {
     email: string
     expiresAt: string
   }): Promise<CreateGuestTokenResult> =>
-    apiClient.post<CreateGuestTokenResult>("/admin/guests", data).then((r) => r.data),
+    apiClient.post<CreateGuestTokenResult>(ENDPOINTS.admin.guests, data).then((r) => r.data),
 
   extendGuest: (id: string, expiresAt: string): Promise<ExtendGuestTokenResult> =>
     apiClient
-      .patch<ExtendGuestTokenResult>(`/admin/guests/${id}/extend`, { expiresAt })
+      .patch<ExtendGuestTokenResult>(ENDPOINTS.admin.guestsByIdExtend(id), { expiresAt })
       .then((r) => r.data),
 
   revokeGuest: (id: string): Promise<{ deleted: boolean }> =>
-    apiClient.delete<{ deleted: boolean }>(`/admin/guests/${id}`).then((r) => r.data),
+    apiClient.delete<{ deleted: boolean }>(ENDPOINTS.admin.revokeGuest(id)).then((r) => r.data),
 }
 
 export default apiClient

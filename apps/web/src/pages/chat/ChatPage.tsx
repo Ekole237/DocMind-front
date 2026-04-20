@@ -1,6 +1,6 @@
 import { Button } from "@workspace/ui/components/button"
 import { Input } from "@workspace/ui/components/input"
-import { Bot, FileText, History, LogOut, Menu, Search, Send, Sparkles, X } from "lucide-react"
+import { Bot, FileText, History, LogOut, Menu, Search, Send, Sparkles, X, PlusCircle } from "lucide-react"
 import { useState } from "react"
 import { useNavigate } from "react-router-dom"
 import { FeedbackModal } from "../../components/chat/FeedbackModal"
@@ -23,11 +23,13 @@ function ChatSidebar({
   onClose,
   onHistoryClick,
   onLogout,
+  onNewChat,
 }: {
   isOpen: boolean
   onClose: () => void
   onHistoryClick: () => void
   onLogout: () => void
+  onNewChat: () => void
 }) {
   return (
     <>
@@ -50,6 +52,18 @@ function ChatSidebar({
         </div>
 
         <nav className="flex-1 space-y-1 p-4">
+          <Button
+            variant="default"
+            className="w-full justify-start gap-3 mb-4"
+            onClick={() => {
+              onNewChat()
+              if (window.innerWidth < 768) onClose()
+            }}
+          >
+            <PlusCircle className="h-4 w-4" />
+            Nouvelle discussion
+          </Button>
+
           <Button
             variant="ghost"
             className="w-full justify-start gap-3"
@@ -122,6 +136,7 @@ export function ChatPage() {
     sendMessage,
     retryLastMessage,
     handleFeedback,
+    clearSession,
     MAX_LENGTH,
   } = useChat()
 
@@ -132,6 +147,7 @@ export function ChatPage() {
         onClose={() => setSidebarOpen(false)}
         onHistoryClick={() => navigate("/history")}
         onLogout={logout}
+        onNewChat={clearSession}
       />
 
       <main className="flex flex-1 flex-col overflow-hidden relative">

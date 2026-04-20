@@ -5,6 +5,7 @@ import type { ApiError, ChatMessage, ChatResponse } from "../../types"
 
 const MIN_LENGTH = 3
 const MAX_LENGTH = 1000
+const LOCAL_STORAGE_KEY = "docmind_chat_messages"
 
 function getFeedbackErrorMessage(err: unknown): string {
   const axiosErr = err as AxiosError<ApiError>
@@ -15,7 +16,17 @@ function getFeedbackErrorMessage(err: unknown): string {
 }
 
 export function useChat() {
-  const [messages, setMessages] = useState<ChatMessage[]>([])
+  const [messages, setMessages] = useState<ChatMessage[]>(() => {
+    try {
+      const stored = localStorage.getItem(LOCAL_STORAGE_KEY)
+      if (stored) {
+        return JSON.parse(stored)
+      }
+    } catch (e) {
+      console.error("Erreur lors de la lecture des messages depuis le localStorage", e)
+    }
+    return []
+  })
   const [inputValue, setInputValue] = useState("")
   const [inputError, setInputError] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(false)
@@ -33,6 +44,15 @@ export function useChat() {
       scrollRef.current.scrollTop = scrollRef.current.scrollHeight
     }
   }, [messages, isLoading])
+
+  useEffect(() => {
+    localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(messages))
+  }, [messages])
+
+  const clearSession = () => {
+    setMessages([])
+    localStorage.removeItem(LOCAL_STORAGE_KEY)
+  }
 
   const executeQuery = async (question: string) => {
     setIsLoading(true)
@@ -155,6 +175,7 @@ export function useChat() {
     sendMessage,
     retryLastMessage,
     handleFeedback,
+    clearSession,
     MAX_LENGTH,
   }
 }

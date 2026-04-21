@@ -20,7 +20,7 @@ export function DashboardPage() {
   return (
     <AdminLayout currentPage="dashboard">
       <div className="p-6">
-        <h1 className="mb-6 text-3xl font-bold">Tableau de bord</h1>
+        <h1 className="mb-6 title-lg">Tableau de bord</h1>
 
         {error && (
           <div className="mb-4 rounded-lg bg-destructive/10 p-4 text-destructive">{error}</div>

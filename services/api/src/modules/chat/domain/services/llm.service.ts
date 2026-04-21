@@ -9,6 +9,9 @@ export interface CompleteResponse {
 }
 
 export interface LlmService {
-  complete(chunks: DocumentChunk[], question: string): Promise<CompleteResponse>;
+  complete(
+    chunks: DocumentChunk[],
+    question: string,
+  ): Promise<CompleteResponse>;
   completeConversational(message: string): Promise<string>;
 }

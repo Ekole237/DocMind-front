@@ -86,8 +86,10 @@ import { AuthModule } from '../auth/auth.module';
       provide: FILE_STORAGE_SERVICE,
       useFactory: (config: ConfigService) => {
         const provider = config.get<string>('STORAGE_PROVIDER', 'r2');
-        if (provider === 'local') return new LocalFileStorageServiceImplementation(config);
-        if (provider === 'supabase') return new SupabaseFileStorageServiceImplementation(config);
+        if (provider === 'local')
+          return new LocalFileStorageServiceImplementation(config);
+        if (provider === 'supabase')
+          return new SupabaseFileStorageServiceImplementation(config);
         return new FileStorageServiceImplementation(config);
       },
       inject: [ConfigService],

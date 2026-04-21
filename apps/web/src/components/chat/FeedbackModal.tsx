@@ -45,7 +45,7 @@ export function FeedbackModal({ isOpen, onClose, onSubmit }: FeedbackModalProps)
         </div>
 
         {success ? (
-          <div className="mb-4 rounded-lg bg-green-500/10 p-3 text-sm text-green-700 dark:text-green-400">
+          <div className="mb-4 rounded-lg bg-[var(--success-bg)]/10 p-3 text-sm text-[var(--success-bg)]">
             ✓ Merci pour votre retour !
           </div>
         ) : (

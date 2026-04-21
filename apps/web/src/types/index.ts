@@ -23,6 +23,8 @@ export interface ChatSource {
   lastModified: string
   driveUrl: string
   confidenceScore: number
+  content?: string
+  exactQuote?: string | null
 }
 
 export interface ChatResponse {

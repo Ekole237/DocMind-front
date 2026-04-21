@@ -12,7 +12,6 @@ import {
 } from '#chat/domain/services/llm.service';
 import {
   VECTOR_SEARCH_SERVICE,
-  type DocumentChunk,
   type VectorSearchService,
 } from '#chat/domain/services/vector-search.service';
 import { ConfigService } from '@nestjs/config';
@@ -135,28 +134,18 @@ export class QueryRagUseCase {
     );
 
     const isIgnorance = chunks.length === 0;
-    let sourceChunk: DocumentChunk | null = chunks[0] ?? null;
+    const primaryChunk = chunks[0] ?? null;
 
-    let answerText = IGNORANCE_RESPONSE;
-    let exactQuote: string | null = null;
-
-    if (!isIgnorance) {
-      const response = await this._llmService.complete(chunks, dto.question);
-      answerText = response.answer;
-      sourceChunk = resolveSourceChunk(
-        chunks,
-        response.sourceChunkId,
-        response.exactQuote,
-      );
-      exactQuote = getVerifiedExactQuote(sourceChunk, response.exactQuote);
-    }
+    const answer = isIgnorance
+      ? IGNORANCE_RESPONSE
+      : await this._llmService.complete(chunks, dto.question);
 
     const responseTimeMs = Date.now() - start;
 
     const queryLog = QueryLogEntity.create(
       userIdHash,
       dto.question,
-      answerText,
+      answer,
       role,
       isGuest,
       isIgnorance,
@@ -170,16 +159,14 @@ export class QueryRagUseCase {
     await this._queryLogRepository.save(queryLog);
 
     return {
-      answer: answerText,
+      answer,
       isIgnorance,
-      source: sourceChunk
+      source: primaryChunk
         ? {
-            documentName: sourceChunk.title,
-            lastModified: sourceChunk.lastModified.toISOString(),
-            driveUrl: sourceChunk.driveUrl ?? '',
-            confidenceScore: sourceChunk.confidenceScore,
-            content: sourceChunk.content,
-            exactQuote,
+            documentName: primaryChunk.title,
+            lastModified: primaryChunk.lastModified.toISOString(),
+            driveUrl: primaryChunk.driveUrl ?? '',
+            confidenceScore: primaryChunk.confidenceScore,
           }
         : null,
       queryLogId: queryLog.id,
@@ -187,61 +174,4 @@ export class QueryRagUseCase {
       context_id: chatSessionId,
     };
   }
-}
-
-function isConversational(question: string): boolean {
-  const trimmed = question.trim();
-  return CONVERSATIONAL_PATTERNS.some((re) => re.test(trimmed));
-}
-
-export interface SourceRef {
-  documentName: string;
-  lastModified: string;
-  driveUrl: string;
-  confidenceScore: number;
-  content?: string;
-  exactQuote?: string | null;
-}
-
-export interface ChatResponse {
-  answer: string;
-  isIgnorance: boolean;
-  source: SourceRef | null;
-  queryLogId: string;
-  responseTimeMs: number;
-}
-
-function resolveSourceChunk(
-  chunks: DocumentChunk[],
-  sourceChunkId: string | null,
-  exactQuote: string | null,
-): DocumentChunk | null {
-  if (sourceChunkId) {
-    const sourceChunk = chunks.find((chunk) => chunk.id === sourceChunkId);
-    if (sourceChunk) {
-      return sourceChunk;
-    }
-  }
-
-  if (exactQuote) {
-    const sourceChunk = chunks.find((chunk) =>
-      chunk.content.includes(exactQuote),
-    );
-    if (sourceChunk) {
-      return sourceChunk;
-    }
-  }
-
-  return chunks[0] ?? null;
-}
-
-function getVerifiedExactQuote(
-  sourceChunk: DocumentChunk | null,
-  exactQuote: string | null,
-): string | null {
-  if (!sourceChunk || !exactQuote) {
-    return null;
-  }
-
-  return sourceChunk.content.includes(exactQuote) ? exactQuote : null;
 }

@@ -93,7 +93,7 @@ export function HistoryPage() {
                       <span>📄 {msg.sourceDocName}</span>
                     )}
                     {msg.isIgnorance && (
-                      <span className="rounded-full bg-[var(--warning-bg)]/10 px-2 py-1 text-[var(--warning-bg)]">
+                      <span className="rounded-full bg-yellow-500/10 px-2 py-1 text-yellow-700 dark:text-yellow-400">
                         Pas de réponse
                       </span>
                     )}

@@ -5,27 +5,3 @@
   font-style: normal;
   font-display: swap;
 }
-
-@font-face {
-  font-family: 'Aeonik';
-  src: url('../../assets/fonts/Aeonik-Regular.otf') format('opentype');
-  font-weight: 400;
-  font-style: normal;
-  font-display: swap;
-}
-
-@font-face {
-  font-family: 'Aeonik';
-  src: url('../../assets/fonts/Aeonik-Medium.otf') format('opentype');
-  font-weight: 500;
-  font-style: normal;
-  font-display: swap;
-}
-
-@font-face {
-  font-family: 'Rebond Grotesque';
-  src: url('../../assets/fonts/RebondGrotesque-Bold.otf') format('opentype');
-  font-weight: 700;
-  font-style: normal;
-  font-display: swap;
-}

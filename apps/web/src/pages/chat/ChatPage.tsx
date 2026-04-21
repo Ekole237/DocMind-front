@@ -108,7 +108,7 @@ function ChatHeader({ onMenuClick }: { onMenuClick: () => void }) {
         <Menu className="h-5 w-5 text-muted-foreground" />
       </button>
       <div className="flex flex-1 items-center justify-between">
-        <h2 className="text-sm font-medium">Assistant Documentaire</h2>
+        <h2 className="subtitle-md">Assistant Documentaire</h2>
       </div>
     </header>
   )
@@ -163,8 +163,8 @@ export function ChatPage() {
                 </div>
                 
                 <div className="max-w-sm space-y-2">
-                  <h3 className="text-2xl font-bold tracking-tight">Bonjour !</h3>
-                  <p className="text-sm text-muted-foreground">
+                  <h3 className="title-lg">Bonjour !</h3>
+                  <p className="text-body text-muted-foreground">
                     Je suis votre assistant de recherche documentaire. 
                     Posez vos questions sur nos politiques internes, assurances et procédures.
                   </p>

@@ -12,7 +12,7 @@ export function MetricCard({ label, value, description, variant = "default" }: M
     variant === "danger" && value > 0
       ? "text-destructive"
       : variant === "warning" && value > 0
-        ? "text-orange-500"
+        ? "text-[var(--warning-bg)]"
         : "text-foreground"
 
   return (

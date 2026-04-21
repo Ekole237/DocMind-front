@@ -6,7 +6,7 @@ import { useEffect, useState } from "react"
 import QRCode from "react-qr-code"
 import { admin } from "../../api/client"
 import { AdminLayout } from "../../components/layout/AdminLayout"
-import type { ApiError, GuestToken, CreateGuestTokenResult, ExtendGuestTokenResult } from "../../types"
+import type { ApiError, CreateGuestTokenResult, ExtendGuestTokenResult, GuestToken } from "../../types"
 
 const LIMIT = 10
 
@@ -80,7 +80,7 @@ function CreateModal({ onClose, onSuccess }: CreateModalProps) {
               <Button size="sm" variant="outline" onClick={() => navigator.clipboard.writeText(result.activateUrl)}>Copier le lien</Button>
             </div>
           </div>
-          <div className="mb-6 rounded bg-orange-500/10 p-3 text-center text-sm font-medium text-orange-500">
+          <div className="mb-6 rounded bg-[var(--warning-bg)]/10 p-3 text-center text-sm font-medium text-[var(--warning-bg)]">
             ⚠️ Ce lien ne sera plus affiché. Transmettez-le maintenant.
           </div>
           <div className="flex justify-end gap-2 pt-2">
@@ -254,7 +254,7 @@ function CopyTokenButton({ token }: { token?: string }) {
       className="flex items-center gap-1 rounded px-2 py-1 text-xs text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
       title="Copier le token"
     >
-      {copied ? <Check className="h-3.5 w-3.5 text-green-500" /> : <Copy className="h-3.5 w-3.5" />}
+      {copied ? <Check className="h-3.5 w-3.5 text-[var(--success-bg)]" /> : <Copy className="h-3.5 w-3.5" />}
       <span className="font-mono">{token.slice(0, 8)}…</span>
     </button>
   )

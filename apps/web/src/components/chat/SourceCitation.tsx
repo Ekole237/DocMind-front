@@ -1,5 +1,5 @@
 import { Button } from "@workspace/ui/components/button"
-import { ExternalLink, FileText, CheckCircle2, ChevronDown, Copy, Check } from "lucide-react"
+import { Check, CheckCircle2, ChevronDown, Copy, ExternalLink, FileText } from "lucide-react"
 import { useState } from "react"
 import type { ChatSource } from "../../types"
 
@@ -48,9 +48,9 @@ export function SourceCitation({ source }: SourceCitationProps) {
   }
 
   const confidenceColor = 
-    source.confidenceScore >= 0.8 ? "text-green-600 dark:text-green-400" :
-    source.confidenceScore >= 0.5 ? "text-yellow-600 dark:text-yellow-400" :
-    "text-red-600 dark:text-red-400"
+    source.confidenceScore >= 0.8 ? "text-[var(--success-bg)]" :
+    source.confidenceScore >= 0.5 ? "text-[var(--warning-bg)]" :
+    "text-destructive"
 
   return (
     <div className="mt-2 flex w-full max-w-[85%] flex-col overflow-hidden rounded-xl border border-border bg-card shadow-sm transition-all hover:shadow-md">
@@ -77,7 +77,7 @@ export function SourceCitation({ source }: SourceCitationProps) {
               {highlightedExcerpt ? (
                 <>
                   {highlightedExcerpt.before}
-                  <mark className="rounded-sm bg-yellow-200/50">
+                  <mark className="rounded-sm bg-[var(--warning-bg)]/30">
                     {highlightedExcerpt.quote}
                   </mark>
                   {highlightedExcerpt.after}
@@ -93,7 +93,7 @@ export function SourceCitation({ source }: SourceCitationProps) {
               onClick={handleCopy}
               title="Copier l'extrait"
             >
-              {isCopied ? <Check className="h-3.5 w-3.5 text-green-500" /> : <Copy className="h-3.5 w-3.5 text-muted-foreground" />}
+              {isCopied ? <Check className="h-3.5 w-3.5 text-[var(--success-bg)]" /> : <Copy className="h-3.5 w-3.5 text-muted-foreground" />}
             </Button>
           </div>
         )}

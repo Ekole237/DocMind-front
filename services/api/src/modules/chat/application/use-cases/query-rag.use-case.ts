@@ -29,61 +29,6 @@ const CONVERSATIONAL_PATTERNS = [
   /^(ça va|comment ça)\b/i,
 ];
 
-function isConversational(question: string): boolean {
-  const trimmed = question.trim();
-  return CONVERSATIONAL_PATTERNS.some((re) => re.test(trimmed));
-}
-
-export interface SourceRef {
-  documentName: string;
-  lastModified: string;
-  driveUrl: string;
-  confidenceScore: number;
-  content?: string;
-  exactQuote?: string | null;
-}
-
-export interface ChatResponse {
-  answer: string;
-  isIgnorance: boolean;
-  source: SourceRef | null;
-  queryLogId: string;
-  responseTimeMs: number;
-}
-
-function resolveSourceChunk(
-  chunks: DocumentChunk[],
-  sourceChunkId: string | null,
-  exactQuote: string | null,
-): DocumentChunk | null {
-  if (sourceChunkId) {
-    const sourceChunk = chunks.find((chunk) => chunk.id === sourceChunkId);
-    if (sourceChunk) {
-      return sourceChunk;
-    }
-  }
-
-  if (exactQuote) {
-    const sourceChunk = chunks.find((chunk) => chunk.content.includes(exactQuote));
-    if (sourceChunk) {
-      return sourceChunk;
-    }
-  }
-
-  return chunks[0] ?? null;
-}
-
-function getVerifiedExactQuote(
-  sourceChunk: DocumentChunk | null,
-  exactQuote: string | null,
-): string | null {
-  if (!sourceChunk || !exactQuote) {
-    return null;
-  }
-
-  return sourceChunk.content.includes(exactQuote) ? exactQuote : null;
-}
-
 @Injectable()
 export class QueryRagUseCase {
   constructor(
@@ -194,4 +139,61 @@ export class QueryRagUseCase {
       responseTimeMs,
     };
   }
+}
+
+function isConversational(question: string): boolean {
+  const trimmed = question.trim();
+  return CONVERSATIONAL_PATTERNS.some((re) => re.test(trimmed));
+}
+
+export interface SourceRef {
+  documentName: string;
+  lastModified: string;
+  driveUrl: string;
+  confidenceScore: number;
+  content?: string;
+  exactQuote?: string | null;
+}
+
+export interface ChatResponse {
+  answer: string;
+  isIgnorance: boolean;
+  source: SourceRef | null;
+  queryLogId: string;
+  responseTimeMs: number;
+}
+
+function resolveSourceChunk(
+  chunks: DocumentChunk[],
+  sourceChunkId: string | null,
+  exactQuote: string | null,
+): DocumentChunk | null {
+  if (sourceChunkId) {
+    const sourceChunk = chunks.find((chunk) => chunk.id === sourceChunkId);
+    if (sourceChunk) {
+      return sourceChunk;
+    }
+  }
+
+  if (exactQuote) {
+    const sourceChunk = chunks.find((chunk) =>
+      chunk.content.includes(exactQuote),
+    );
+    if (sourceChunk) {
+      return sourceChunk;
+    }
+  }
+
+  return chunks[0] ?? null;
+}
+
+function getVerifiedExactQuote(
+  sourceChunk: DocumentChunk | null,
+  exactQuote: string | null,
+): string | null {
+  if (!sourceChunk || !exactQuote) {
+    return null;
+  }
+
+  return sourceChunk.content.includes(exactQuote) ? exactQuote : null;
 }

@@ -1,4 +1,7 @@
-import { type CompleteResponse, type LlmService } from '#chat/domain/services/llm.service';
+import {
+  type CompleteResponse,
+  type LlmService,
+} from '#chat/domain/services/llm.service';
 import { type DocumentChunk } from '#chat/domain/services/vector-search.service';
 import { PromptBuilder } from '#chat/infrastructure/services/prompt-builder';
 import { Injectable, Logger } from '@nestjs/common';
@@ -18,7 +21,10 @@ export class LlmServiceImplementation implements LlmService {
     private readonly _promptBuilder: PromptBuilder,
   ) {}
 
-  async complete(chunks: DocumentChunk[], question: string): Promise<CompleteResponse> {
+  async complete(
+    chunks: DocumentChunk[],
+    question: string,
+  ): Promise<CompleteResponse> {
     const provider = this._configService.get<string>('LLM_PROVIDER', 'openai');
     const userPrompt = this._promptBuilder.buildUserPrompt(chunks, question);
     const systemPrompt = this._promptBuilder.SYSTEM_PROMPT;
@@ -116,7 +122,10 @@ export class LlmServiceImplementation implements LlmService {
   }
 
   private _stripCodeFences(text: string): string {
-    return text.replace(/```json/g, '').replace(/```/g, '').trim();
+    return text
+      .replace(/```json/g, '')
+      .replace(/```/g, '')
+      .trim();
   }
 
   private _extractJsonObject(text: string): string | null {

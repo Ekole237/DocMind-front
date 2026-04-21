@@ -1,11 +1,10 @@
 import { useState, useRef, useEffect } from "react"
 import type { AxiosError } from "axios"
-import apiClient from "../../api/client"
-import type { ApiError, ChatMessage, ChatResponse } from "../../types"
+import apiClient, { chat } from "../../api/client"
+import type { ApiError, ChatMessage, ChatResponse, ChatSession } from "../../types"
 
 const MIN_LENGTH = 3
 const MAX_LENGTH = 1000
-const LOCAL_STORAGE_KEY = "docmind_chat_messages"
 
 function getFeedbackErrorMessage(err: unknown): string {
   const axiosErr = err as AxiosError<ApiError>
@@ -16,17 +15,9 @@ function getFeedbackErrorMessage(err: unknown): string {
 }
 
 export function useChat() {
-  const [messages, setMessages] = useState<ChatMessage[]>(() => {
-    try {
-      const stored = localStorage.getItem(LOCAL_STORAGE_KEY)
-      if (stored) {
-        return JSON.parse(stored)
-      }
-    } catch (e) {
-      console.error("Erreur lors de la lecture des messages depuis le localStorage", e)
-    }
-    return []
-  })
+  const [messages, setMessages] = useState<ChatMessage[]>([])
+  const [sessionId, setSessionId] = useState<string | null>(null)
+  const [sessions, setSessions] = useState<ChatSession[]>([])
   const [inputValue, setInputValue] = useState("")
   const [inputError, setInputError] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(false)
@@ -45,19 +36,51 @@ export function useChat() {
     }
   }, [messages, isLoading])
 
+  const fetchSessions = async () => {
+    try {
+      const data = await chat.getSessions()
+      setSessions(data)
+    } catch (error) {
+      console.error("Erreur lors de la récupération des sessions", error)
+    }
+  }
+
   useEffect(() => {
-    localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(messages))
-  }, [messages])
+    fetchSessions()
+  }, [])
+
+  const loadSession = async (id: string) => {
+    setIsLoading(true)
+    try {
+      const logs = await chat.getSessionLogs(id)
+      setMessages(logs)
+      setSessionId(id)
+    } catch (error) {
+      console.error("Erreur lors du chargement de la session", error)
+    } finally {
+      setIsLoading(false)
+    }
+  }
 
   const clearSession = () => {
     setMessages([])
-    localStorage.removeItem(LOCAL_STORAGE_KEY)
+    setSessionId(null)
   }
 
   const executeQuery = async (question: string) => {
     setIsLoading(true)
     try {
-      const { data } = await apiClient.post<ChatResponse>("/chat/query", { question })
+      const payload: { question: string; context_id?: string } = { question }
+      if (sessionId) {
+        payload.context_id = sessionId
+      }
+
+      const { data } = await apiClient.post<ChatResponse>("/chat/query", payload)
+
+      if (!sessionId && data.context_id) {
+        setSessionId(data.context_id)
+        fetchSessions()
+      }
 
       const assistantMsg: ChatMessage = {
         id: crypto.randomUUID(),
@@ -176,6 +199,9 @@ export function useChat() {
     retryLastMessage,
     handleFeedback,
     clearSession,
+    loadSession,
+    sessions,
+    sessionId,
     MAX_LENGTH,
   }
 }

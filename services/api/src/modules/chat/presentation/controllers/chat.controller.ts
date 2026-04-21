@@ -6,10 +6,13 @@ import { SubmitFeedbackDto } from '#chat/application/dto/submit-feedback.dto';
 import { GetHistoryUseCase } from '#chat/application/use-cases/get-history.use-case';
 import { QueryRagUseCase } from '#chat/application/use-cases/query-rag.use-case';
 import { SubmitFeedbackUseCase } from '#chat/application/use-cases/submit-feedback.use-case';
+import { ListSessionsUseCase } from '#chat/application/use-cases/list-sessions.use-case';
+import { GetSessionLogsUseCase } from '#chat/application/use-cases/get-session-logs.use-case';
 import {
   Body,
   Controller,
   Get,
+  Param,
   HttpCode,
   HttpStatus,
   Post,
@@ -26,6 +29,8 @@ export class ChatController {
     private readonly _queryRagUseCase: QueryRagUseCase,
     private readonly _submitFeedbackUseCase: SubmitFeedbackUseCase,
     private readonly _getHistoryUseCase: GetHistoryUseCase,
+    private readonly _listSessionsUseCase: ListSessionsUseCase,
+    private readonly _getSessionLogsUseCase: GetSessionLogsUseCase,
   ) {}
 
   @Post('query')
@@ -54,5 +59,15 @@ export class ChatController {
   @Get('history')
   history(@Query() dto: GetHistoryDto, @Request() req: { user: JwtPayload }) {
     return this._getHistoryUseCase.execute(dto, req.user.sub);
+  }
+
+  @Get('sessions')
+  sessions(@Request() req: { user: JwtPayload }) {
+    return this._listSessionsUseCase.execute(req.user.sub);
+  }
+
+  @Get('sessions/:id/logs')
+  sessionLogs(@Param('id') id: string, @Request() req: { user: JwtPayload }) {
+    return this._getSessionLogsUseCase.execute(id, req.user.sub);
   }
 }

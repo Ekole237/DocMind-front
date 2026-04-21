@@ -33,6 +33,13 @@ export interface ChatResponse {
   source: ChatSource | null
   queryLogId: string
   responseTimeMs: number
+  context_id: string;
+}
+
+export interface ChatSession {
+  id: string;
+  title: string;
+  updatedAt: string;
 }
 
 export interface FeedbackRequest {

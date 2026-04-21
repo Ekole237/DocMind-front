@@ -68,21 +68,35 @@ model Document {
   @@index([createdAt])
 }
 
+model ChatSession {
+  id         String     @id @default(uuid())
+  userIdHash String
+  title      String
+  createdAt  DateTime   @default(now())
+  updatedAt  DateTime   @updatedAt
+  queryLogs  QueryLog[]
+
+  @@index([userIdHash])
+  @@index([updatedAt])
+}
+
 model QueryLog {
-  id             String    @id @default(uuid())
+  id             String       @id @default(uuid())
   userIdHash     String
   question       String
   answer         String
+  chatSessionId  String?
+  chatSession    ChatSession? @relation(fields: [chatSessionId], references: [id])
   sourceDocId    String?
   sourceDocName  String?
   sourceDriveUrl String?
-  isGuest        Boolean   @default(false)
+  isGuest        Boolean      @default(false)
   role           String
-  isFlagged      Boolean   @default(false)
-  isIgnorance    Boolean   @default(false)
+  isFlagged      Boolean      @default(false)
+  isIgnorance    Boolean      @default(false)
   responseTimeMs Int?
-  timestamp      DateTime  @default(now())
-  sourceDoc      Document? @relation(fields: [sourceDocId], references: [id])
+  timestamp      DateTime     @default(now())
+  sourceDoc      Document?    @relation(fields: [sourceDocId], references: [id])
   feedback       Feedback?
 
   @@index([userIdHash])

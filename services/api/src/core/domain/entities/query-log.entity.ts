@@ -11,6 +11,7 @@ export class QueryLogEntity {
     private readonly _isFlagged: boolean,
     private readonly _isIgnorance: boolean,
     private readonly _timestamp: Date,
+    private readonly _chatSessionId: string | null,
     private readonly _sourceDocId: string | null,
     private readonly _sourceDocName: string | null,
     private readonly _sourceDriveUrl: string | null,
@@ -24,6 +25,7 @@ export class QueryLogEntity {
     role: string,
     isGuest: boolean,
     isIgnorance: boolean,
+    chatSessionId: string | null,
     sourceDocId: string | null,
     sourceDocName: string | null,
     sourceDriveUrl: string | null,
@@ -39,6 +41,7 @@ export class QueryLogEntity {
       false,
       isIgnorance,
       new Date(),
+      chatSessionId,
       sourceDocId,
       sourceDocName,
       sourceDriveUrl,
@@ -56,6 +59,7 @@ export class QueryLogEntity {
     isFlagged: boolean,
     isIgnorance: boolean,
     timestamp: Date,
+    chatSessionId: string | null,
     sourceDocId: string | null,
     sourceDocName: string | null,
     sourceDriveUrl: string | null,
@@ -71,6 +75,7 @@ export class QueryLogEntity {
       isFlagged,
       isIgnorance,
       timestamp,
+      chatSessionId,
       sourceDocId,
       sourceDocName,
       sourceDriveUrl,
@@ -104,6 +109,9 @@ export class QueryLogEntity {
   }
   get timestamp(): Date {
     return this._timestamp;
+  }
+  get chatSessionId(): string | null {
+    return this._chatSessionId;
   }
   get sourceDocId(): string | null {
     return this._sourceDocId;

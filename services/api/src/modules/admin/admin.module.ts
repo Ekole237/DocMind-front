@@ -6,6 +6,7 @@ import { DisableDocumentUseCase } from '#admin/application/use-cases/disable-doc
 import { EnableDocumentUseCase } from '#admin/application/use-cases/enable-document.use-case';
 import { ExtendGuestTokenUseCase } from '#admin/application/use-cases/extend-guest-token.use-case';
 import { ImportDocumentUseCase } from '#admin/application/use-cases/import-document.use-case';
+import { ImportDocumentsBatchUseCase } from '#admin/application/use-cases/import-documents-batch.use-case';
 import { IndexDocumentUseCase } from '#admin/application/use-cases/index-document.use-case';
 import { ListAllDocumentsUseCase } from '#admin/application/use-cases/list-all-documents.use-case';
 import { ListFeedbacksUseCase } from '#admin/application/use-cases/list-feelbacks.use-case';
@@ -49,6 +50,7 @@ import { ChatModule } from '../chat/chat.module';
     DashboardUseCase,
     ListAllDocumentsUseCase,
     ImportDocumentUseCase,
+    ImportDocumentsBatchUseCase,
     ClassifyDocumentUseCase,
     IndexDocumentUseCase,
     DisableDocumentUseCase,

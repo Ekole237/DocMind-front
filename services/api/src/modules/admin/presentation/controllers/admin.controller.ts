@@ -9,6 +9,7 @@ import { DisableDocumentUseCase } from '#admin/application/use-cases/disable-doc
 import { EnableDocumentUseCase } from '#admin/application/use-cases/enable-document.use-case';
 import { ExtendGuestTokenUseCase } from '#admin/application/use-cases/extend-guest-token.use-case';
 import { ImportDocumentUseCase } from '#admin/application/use-cases/import-document.use-case';
+import { ImportDocumentsBatchUseCase } from '#admin/application/use-cases/import-documents-batch.use-case';
 import { IndexDocumentUseCase } from '#admin/application/use-cases/index-document.use-case';
 import { ListAllDocumentsUseCase } from '#admin/application/use-cases/list-all-documents.use-case';
 import { ListFeedbacksUseCase } from '#admin/application/use-cases/list-feelbacks.use-case';
@@ -108,6 +109,7 @@ export class AdminController {
     private readonly _dashboardUseCase: DashboardUseCase,
     private readonly _listAllDocumentsUseCase: ListAllDocumentsUseCase,
     private readonly _importDocumentUseCase: ImportDocumentUseCase,
+    private readonly _importDocumentsBatchUseCase: ImportDocumentsBatchUseCase,
     private readonly _classifyDocumentUseCase: ClassifyDocumentUseCase,
     private readonly _indexDocumentUseCase: IndexDocumentUseCase,
     private readonly _disableDocumentUseCase: DisableDocumentUseCase,
@@ -183,6 +185,59 @@ export class AdminController {
     return this._importDocumentUseCase.execute(
       { title, confidentiality: confidentialityRaw as Confidentiality },
       { buffer, originalName: data.filename, mimeType: data.mimetype },
+    );
+  }
+
+  @Post('documents/batch')
+  @HttpCode(HttpStatus.CREATED)
+  @Throttle({ default: { ttl: 60 * 1000, limit: 4 } })
+  async importDocumentsBatch(
+    @Request() req: FastifyRequest,
+    @Query('confidentiality') confidentialityRaw?: string,
+  ) {
+    if (
+      !confidentialityRaw ||
+      !Object.values(Confidentiality).includes(confidentialityRaw as Confidentiality)
+    ) {
+      throw new BadRequestException(
+        `Le champ confidentiality est requis. Valeurs acceptées : ${Object.values(Confidentiality).join(', ')}.`,
+      );
+    }
+
+    const confidentiality = confidentialityRaw as Confidentiality;
+    const files = await req.files();
+    const uploaded: { buffer: Buffer; originalName: string; mimeType: string }[] = [];
+
+    for await (const part of files) {
+      const fileExtension =
+        part.filename.lastIndexOf('.') >= 0
+          ? part.filename.slice(part.filename.lastIndexOf('.')).toLowerCase()
+          : '';
+
+      if (
+        !AdminController.ALLOWED_UPLOAD_MIME_TYPES.has(part.mimetype) ||
+        !AdminController.ALLOWED_UPLOAD_EXTENSIONS.has(fileExtension)
+      ) {
+        throw new BadRequestException(
+          `Type de fichier non autorisé : ${part.filename}. Formats acceptés: .pdf, .docx, .doc, .txt.`,
+        );
+      }
+
+      const buffer = await part.toBuffer();
+      uploaded.push({ buffer, originalName: part.filename, mimeType: part.mimetype });
+    }
+
+    if (uploaded.length === 0) {
+      throw new BadRequestException('Aucun fichier valide trouvé.');
+    }
+
+    if (uploaded.length > 20) {
+      throw new BadRequestException('Maximum 20 fichiers par import.');
+    }
+
+    return this._importDocumentsBatchUseCase.execute(
+      { confidentiality },
+      uploaded,
     );
   }
 

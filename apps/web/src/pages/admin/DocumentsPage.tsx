@@ -2,8 +2,14 @@ import type { ColumnDef } from "@tanstack/react-table";
 import { Badge } from "@workspace/ui/components/badge";
 import { Button } from "@workspace/ui/components/button";
 import { DataTable, DataTableColumnHeader } from "@workspace/ui/components/data-table";
-import { Input } from "@workspace/ui/components/input";
-import { Eye, EyeOff, Plus, RefreshCw, Trash2, Zap } from "lucide-react";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@workspace/ui/components/select";
+import { Eye, EyeOff, FileText, Plus, RefreshCw, Trash2, Upload, Zap } from "lucide-react";
 import { useEffect, useState } from "react";
 import { admin } from "@/api/client";
 import { AdminLayout } from "../../components/layout/AdminLayout";
@@ -21,6 +27,17 @@ function statusBadge(status: AdminDocument["_status"]) {
   return <Badge variant={variant}>{label}</Badge>;
 }
 
+function confidentialityBadge(level: string) {
+  const map: Record<string, { variant: "success" | "default" | "pending" | "destructive"; label: string }> = {
+    PUBLIC: { variant: "success", label: "Public" },
+    INTERNAL: { variant: "default", label: "Interne" },
+    CONFIDENTIAL: { variant: "pending", label: "Confidentiel" },
+    RESTRICTED: { variant: "destructive", label: "Restreint" },
+  };
+  const { variant, label } = map[level] ?? { variant: "default", label: level };
+  return <Badge variant={variant}>{label}</Badge>;
+}
+
 function getApiMessage(err: unknown, fallback: string): string {
   const e = err as { response?: { data?: ApiError } };
   return e.response?.data?.message ?? fallback;
@@ -33,92 +50,167 @@ interface AddDocModalProps {
 }
 
 function AddDocModal({ onClose, onSuccess }: AddDocModalProps) {
-  const [title, setTitle] = useState("");
-  const [file, setFile] = useState<File | null>(null);
+  const [files, setFiles] = useState<File[]>([]);
+  const [confidentiality, setConfidentiality] = useState<string>("PUBLIC");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [dragOver, setDragOver] = useState(false);
+
+  const allowedExtensions = ["pdf", "docx", "txt"];
+
+  const isAllowed = (name: string) => {
+    const ext = name.split(".").pop()?.toLowerCase();
+    return ext && allowedExtensions.includes(ext);
+  };
+
+  const addFiles = (incoming: FileList | File[]) => {
+    const valid = Array.from(incoming).filter(
+      (f) => isAllowed(f.name) && f.size <= 10 * 1024 * 1024,
+    );
+    if (valid.length === 0) {
+      setError("Aucun fichier valide. Formats: PDF, DOCX, TXT (max 10 Mo).");
+      return;
+    }
+    setError("");
+    setFiles((prev) => [...prev, ...valid]);
+  };
+
+  const removeFile = (index: number) => {
+    setFiles((prev) => prev.filter((_, i) => i !== index));
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    setDragOver(false);
+    if (e.dataTransfer.files) addFiles(e.dataTransfer.files);
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!title.trim()) {
-      setError("Le titre est requis.");
-      return;
-    }
-    if (!file) {
-      setError("Veuillez sélectionner un fichier.");
-      return;
-    }
-
-    if (file.size > 10 * 1024 * 1024) {
-      setError("Le fichier dépasse la limite autorisée (10 Mo).");
-      return;
-    }
-
-    const allowedExtensions = ["pdf", "docx", "txt"];
-    const extMatch = file.name.split(".").pop()?.toLowerCase();
-    if (!extMatch || !allowedExtensions.includes(extMatch)) {
-      setError("Format non supporté. Utilisez PDF, DOCX ou TXT.");
+    if (files.length === 0) {
+      setError("Veuillez sélectionner au moins un fichier.");
       return;
     }
 
     setLoading(true);
     setError("");
     try {
-      await admin.importDocument({ title: title.trim(), confidentiality: "PUBLIC", file });
+      await admin.importDocuments({ confidentiality, files });
       onSuccess();
       onClose();
     } catch (err) {
-      setError(getApiMessage(err, "Erreur lors de l'ajout"));
+      setError(getApiMessage(err, "Erreur lors de l'import"));
     } finally {
       setLoading(false);
     }
   };
 
+  const formatSize = (bytes: number) => {
+    if (bytes < 1024) return `${bytes} o`;
+    if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} Ko`;
+    return `${(bytes / (1024 * 1024)).toFixed(1)} Mo`;
+  };
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
       <div className="w-full max-w-md rounded-lg border border-border bg-card p-6 shadow-lg">
-        <h2 className="mb-4 font-semibold text-lg">Ajouter un document</h2>
+        <h2 className="mb-4 font-semibold text-lg">Ajouter des documents</h2>
         {error && (
           <div className="mb-3 rounded bg-destructive/10 p-2 text-sm text-destructive">{error}</div>
         )}
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
             <label className="mb-1 block text-sm font-medium">
-              Fichier (PDF, DOCX, TXT - max 10 Mo) <span className="text-destructive">*</span>
+              Fichiers <span className="text-destructive">*</span>
             </label>
-            <Input
+            <div
+              onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
+              onDragLeave={() => setDragOver(false)}
+              onDrop={handleDrop}
+              onClick={() => document.getElementById("file-input")?.click()}
+              className={`relative flex cursor-pointer flex-col items-center justify-center rounded-lg border-2 border-dashed p-6 transition-colors ${
+                dragOver
+                  ? "border-primary bg-primary/5"
+                  : files.length > 0
+                    ? "border-success bg-success/5"
+                    : "border-border hover:border-muted-foreground/50"
+              }`}
+            >
+              {files.length > 0 ? (
+                <div className="flex items-center gap-3">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10">
+                    <FileText className="h-5 w-5 text-primary" />
+                  </div>
+                  <div className="min-w-0">
+                    <p className="text-sm font-medium">{files.length} fichier{files.length > 1 ? "s" : ""} sélectionné{files.length > 1 ? "s" : ""}</p>
+                    <p className="text-xs text-muted-foreground">
+                      {formatSize(files.reduce((sum, f) => sum + f.size, 0))} au total
+                    </p>
+                  </div>
+                </div>
+              ) : (
+                <>
+                  <Upload className="mb-2 h-8 w-8 text-muted-foreground" />
+                  <p className="text-sm text-muted-foreground">
+                    <span className="font-medium text-foreground">Cliquez</span> ou glissez-déposez
+                  </p>
+                  <p className="mt-1 text-xs text-muted-foreground">PDF, DOCX, TXT (max 10 Mo par fichier)</p>
+                </>
+              )}
+            </div>
+            <input
+              id="file-input"
               type="file"
+              multiple
               accept=".pdf,.docx,.txt"
-              className="cursor-pointer file:text-foreground file:bg-muted file:border-0 file:mr-2 file:px-2 file:py-1 file:rounded"
-              onChange={(e) => {
-                const selected = e.target.files?.[0] || null;
-                setFile(selected);
-                if (selected && !title) {
-                  const nameParts = selected.name.split(".");
-                  nameParts.pop();
-                  setTitle(nameParts.join("."));
-                }
-              }}
-              required
+              className="hidden"
+              onChange={(e) => { if (e.target.files) addFiles(e.target.files); }}
             />
           </div>
+
+          {files.length > 0 && (
+            <div className="max-h-40 space-y-1 overflow-y-auto rounded-lg border border-border p-2">
+              {files.map((f, i) => (
+                <div key={`${f.name}-${i}`} className="flex items-center justify-between rounded px-2 py-1 hover:bg-muted/50">
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-sm">{f.name}</p>
+                    <p className="text-xs text-muted-foreground">{formatSize(f.size)}</p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => removeFile(i)}
+                    className="ml-2 rounded p-1 text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
+                  >
+                    <Trash2 className="h-3.5 w-3.5" />
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+
           <div>
-            <label className="mb-1 block text-sm font-medium">
-              Titre <span className="text-destructive">*</span>
-            </label>
-            <Input
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              placeholder="Nom du document"
-              required
-            />
+            <label className="mb-1 block text-sm font-medium">Confidentialité</label>
+            <Select value={confidentiality} onValueChange={setConfidentiality}>
+              <SelectTrigger className="w-full">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="PUBLIC">Public — accessible à tous</SelectItem>
+                <SelectItem value="INTERNAL">Interne — accessible aux employés</SelectItem>
+                <SelectItem value="CONFIDENTIAL">Confidentiel — réservé aux administrateurs</SelectItem>
+                <SelectItem value="RESTRICTED">Restreint — accès strict aux administrateurs</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
+
           <div className="flex justify-end gap-2 pt-2">
             <Button type="button" variant="outline" onClick={onClose} disabled={loading}>
               Annuler
             </Button>
-            <Button type="submit" disabled={loading}>
-              {loading ? "Ajout..." : "Ajouter"}
+            <Button type="submit" disabled={loading || files.length === 0}>
+              {loading
+                ? `Import de ${files.length} fichier${files.length > 1 ? "s" : ""}...`
+                : `Importer ${files.length > 0 ? `(${files.length})` : ""}`}
             </Button>
           </div>
         </form>
@@ -289,9 +381,7 @@ export function DocumentsPage() {
     {
       accessorKey: "_confidentiality",
       header: ({ column }) => <DataTableColumnHeader column={column} title="Confidentialité" />,
-      cell: (info) => (
-        <span className="text-xs text-muted-foreground">{info.getValue() as string}</span>
-      ),
+      cell: (info) => confidentialityBadge(info.getValue() as string),
     },
     {
       accessorKey: "_chunkCount",

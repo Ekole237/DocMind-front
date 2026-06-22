@@ -1,4 +1,4 @@
-import React, { useState, useRef, useCallback } from "react";
+import React, { useState, useRef, useCallback, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import type { AxiosError } from "axios";
 import apiClient, { chat } from "../../api/client";
@@ -40,6 +40,10 @@ export function useChat(id?: string) {
       console.error("Failed to fetch sessions:", err);
     }
   }, []);
+
+  useEffect(() => {
+    fetchSessions();
+  }, [fetchSessions]);
 
   const loadSession = useCallback(
     async (id: string) => {

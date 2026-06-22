@@ -38,6 +38,24 @@ export class DocumentRepositoryImplementation implements DocumentRepository {
     return entity;
   }
 
+  async createDocuments(dtos: CreateDocument[]): Promise<DocumentEntity[]> {
+    const entities = dtos.map((dto) =>
+      DocumentEntity.create(
+        dto.title,
+        dto.confidentiality,
+        dto.driveUrl ?? null,
+        dto.filePath ?? null,
+        dto.mimeType ?? null,
+      ),
+    );
+
+    await this._prismaService.document.createMany({
+      data: entities.map((e) => DocumentMapper.toOrm(e)),
+    });
+
+    return entities;
+  }
+
   async findById(id: string): Promise<DocumentEntity | null> {
     const raw = await this._prismaService.document.findUnique({
       where: { id },

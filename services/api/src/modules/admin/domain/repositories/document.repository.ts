@@ -19,6 +19,7 @@ export interface ClassifyDocument {
 export interface DocumentRepository {
   listDocuments(): Promise<DocumentEntity[]>;
   createDocument(dto: CreateDocument): Promise<DocumentEntity>;
+  createDocuments(dtos: CreateDocument[]): Promise<DocumentEntity[]>;
   findById(id: string): Promise<DocumentEntity | null>;
   classifyDocument(id: string, dto: ClassifyDocument): Promise<DocumentEntity>;
   disableDocument(id: string): Promise<DocumentEntity>;

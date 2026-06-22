@@ -6,5 +6,22 @@
   "transform": {
     "^.+\\.(t|j)s$": "ts-jest"
   },
-  "setupFiles": ["<rootDir>/test/setup.ts"]
+  "setupFiles": ["<rootDir>/test/setup.ts"],
+  "moduleNameMapper": {
+    "^#auth/domain/(.*)$": "<rootDir>/src/modules/auth/domain/$1",
+    "^#auth/application/(.*)$": "<rootDir>/src/modules/auth/application/$1",
+    "^#auth/infrastructure/(.*)$": "<rootDir>/src/modules/auth/infrastructure/$1",
+    "^#auth/presentation/(.*)$": "<rootDir>/src/modules/auth/presentation/$1",
+    "^#admin/domain/(.*)$": "<rootDir>/src/modules/admin/domain/$1",
+    "^#admin/application/(.*)$": "<rootDir>/src/modules/admin/application/$1",
+    "^#admin/infrastructure/(.*)$": "<rootDir>/src/modules/admin/infrastructure/$1",
+    "^#admin/presentation/(.*)$": "<rootDir>/src/modules/admin/presentation/$1",
+    "^#chat/domain/(.*)$": "<rootDir>/src/modules/chat/domain/$1",
+    "^#chat/application/(.*)$": "<rootDir>/src/modules/chat/application/$1",
+    "^#chat/infrastructure/(.*)$": "<rootDir>/src/modules/chat/infrastructure/$1",
+    "^#chat/presentation/(.*)$": "<rootDir>/src/modules/chat/presentation/$1",
+    "^#shared/(.*)$": "<rootDir>/src/core/$1",
+    "^#prisma/(.*)$": "<rootDir>/src/generated/prisma-client/$1",
+    "^src/(.*)$": "<rootDir>/src/$1"
+  }
 }

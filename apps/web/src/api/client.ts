@@ -170,6 +170,23 @@ export const admin = {
       .then((r) => r.data);
   },
 
+  importDocuments: (data: {
+    confidentiality: string;
+    files: File[];
+  }): Promise<AdminDocument[]> => {
+    const formData = new FormData();
+    data.files.forEach((file) => formData.append("files", file));
+
+    return apiClient
+      .post<AdminDocument[]>(`${ENDPOINTS.admin.documents}/batch`, formData, {
+        params: { confidentiality: data.confidentiality },
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
+      })
+      .then((r) => r.data);
+  },
+
   indexDocument: (id: string) =>
     apiClient
       .post<{

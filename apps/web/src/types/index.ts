@@ -88,7 +88,7 @@ export interface ChatMessage {
 
 export type DocumentStatus = "PENDING" | "INDEXED" | "DISABLED" | "ERROR"
 export type FeedbackStatus = "PENDING" | "RESOLVED"
-export type Confidentiality = "PUBLIC"
+export type Confidentiality = "PUBLIC" | "INTERNAL" | "CONFIDENTIAL" | "RESTRICTED"
 
 export interface DailyStat {
   date: string

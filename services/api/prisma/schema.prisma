@@ -130,5 +130,7 @@ enum FeedbackStatus {
 
 enum Confidentiality {
   PUBLIC
-  // PRIVATE
+  INTERNAL
+  CONFIDENTIAL
+  RESTRICTED
 }

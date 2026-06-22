@@ -1,3 +1,6 @@
 export enum Confidentiality {
   PUBLIC = 'PUBLIC',
+  INTERNAL = 'INTERNAL',
+  CONFIDENTIAL = 'CONFIDENTIAL',
+  RESTRICTED = 'RESTRICTED',
 }

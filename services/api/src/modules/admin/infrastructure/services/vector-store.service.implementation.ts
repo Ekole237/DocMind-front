@@ -7,6 +7,7 @@ import {
   type FileStorageService,
 } from '#admin/domain/services/file-storage.service';
 import { type VectorStoreService } from '#admin/domain/services/vector-store.service';
+import { CONFIDENTIALITY_ROLE_REQUIRED } from '#admin/domain/enums/confidentiality-level';
 import {
   EMBEDDING_SERVICE,
   type EmbeddingService,
@@ -21,7 +22,6 @@ import { QdrantService } from 'src/qdrant/qdrant.service';
 
 const CHUNK_SIZE = 512;
 const CHUNK_OVERLAP = 50;
-const ROLE_REQUIRED = 0;
 
 @Injectable()
 export class VectorStoreServiceImplementation implements VectorStoreService {
@@ -139,7 +139,7 @@ export class VectorStoreServiceImplementation implements VectorStoreService {
         content: chunks[index],
         date: document.lastModified.toISOString(),
         chunk_index: index,
-        role_required: ROLE_REQUIRED,
+        role_required: CONFIDENTIALITY_ROLE_REQUIRED[document.confidentiality],
       },
     }));
   }
